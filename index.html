@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Panel — U.S. Visa Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#002868;--blue2:#003a99;--red:#BF0A30;--gold:#C9A84C;--white:#fff;--offwhite:#F0F4FA;--text:#1A1A2E;--muted:#5a6480;--border:#d0d8e8;--green:#1a6b3a;--amber:#9a6b00;--dark:#0d1a35;--serif:'Source Serif 4',Georgia,serif;--sans:'Inter',system-ui,sans-serif;--mono:'Roboto Mono',monospace;--radius:6px;--shadow:0 2px 16px rgba(0,40,104,.10)}
+body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-height:100vh}
+
+/* ===== LOGIN ===== */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blue),#001a52,#0a0a2a);padding:20px}
+.login-card{background:#fff;border-radius:12px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-seal{text-align:center;margin-bottom:20px}
+.login-card h1{font-family:var(--serif);font-size:22px;color:var(--blue);text-align:center;margin-bottom:4px}
+.login-card .sub{text-align:center;font-size:12px;color:var(--muted);margin-bottom:28px;letter-spacing:.5px;text-transform:uppercase}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;outline:none}
+.field input:focus{border-color:var(--blue)}
+.login-btn{width:100%;background:var(--blue);color:#fff;border:none;padding:13px;border-radius:var(--radius);font-weight:600;font-size:14px;cursor:pointer;margin-top:8px}
+.login-btn:hover{background:var(--blue2)}
+.login-btn:disabled{background:#ccc;cursor:not-allowed}
+.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:14px;display:none}
+
+/* ===== DASHBOARD ===== */
+#dashboard{display:none}
+.admin-nav{background:var(--dark);color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.admin-brand{display:flex;align-items:center;gap:10px}
+.admin-brand strong{font-family:var(--serif);font-size:15px}
+.admin-brand span{font-size:10px;background:var(--red);padding:2px 8px;border-radius:10px;margin-left:8px;letter-spacing:.5px}
+.logout-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer}
+.logout-btn:hover{background:rgba(255,255,255,.18)}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:24px;max-width:1300px;margin:0 auto}
+.stat-card{background:#fff;border-radius:8px;padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--blue)}
+.stat-card.pending{border-color:var(--amber)}
+.stat-card.review{border-color:#a0440a}
+.stat-card.approved{border-color:var(--green)}
+.stat-card.denied{border-color:var(--red)}
+.stat-num{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--blue)}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+
+.toolbar{max-width:1300px;margin:0 auto;padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;background:#fff;outline:none}
+.toolbar input{flex:1;min-width:200px}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--blue)}
+
+.table-wrap{max-width:1300px;margin:0 auto;padding:0 24px 40px}
+.app-table{width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:var(--shadow);border-collapse:collapse}
+.app-table th{background:var(--offwhite);text-align:left;padding:12px 16px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.app-table td{padding:14px 16px;font-size:13px;border-top:1px solid var(--border)}
+.app-table tr:hover{background:rgba(0,40,104,.02);cursor:pointer}
+.ref-cell{font-family:var(--mono);color:var(--blue);font-weight:600}
+.status-pill{padding:5px 12px;border-radius:30px;font-size:11px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.status-pending_payment{background:#fff3cd;color:var(--amber)}
+.status-payment_received{background:#d4edff;color:var(--blue)}
+.status-biometric_scheduled{background:#e0d4ff;color:#5a2a9e}
+.status-under_review{background:#ffe4d4;color:#a0440a}
+.status-approved{background:#d4f5dd;color:var(--green)}
+.status-denied{background:#ffd4d4;color:var(--red)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-head{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;z-index:2}
+.modal-head h2{font-family:var(--serif);font-size:20px;color:var(--blue)}
+.modal-head .mref{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px}
+.close-btn{background:var(--offwhite);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--muted)}
+.modal-body{padding:24px 28px}
+.detail-section{margin-bottom:24px}
+.detail-section h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.detail-item .dl{font-size:11px;color:var(--muted)}
+.detail-item .dv{font-size:13px;font-weight:600;margin-top:2px}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.doc-link{display:block;border:1.5px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center;font-size:12px;color:var(--blue);text-decoration:none;font-weight:600}
+.doc-link:hover{border-color:var(--blue);background:rgba(0,40,104,.04)}
+.bio-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}
+.bio-photo-card{display:block;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;text-decoration:none;text-align:center}
+.bio-photo-card img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.bio-photo-card span{display:block;font-size:11px;font-weight:600;color:var(--blue);padding:6px 4px;background:var(--offwhite)}
+.bio-photo-card:hover{border-color:var(--blue)}
+.status-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.action-btn{padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;color:var(--text)}
+.action-btn:hover{border-color:var(--blue)}
+.action-btn.approve{border-color:var(--green);color:var(--green)}
+.action-btn.approve:hover{background:var(--green);color:#fff}
+.action-btn.deny{border-color:var(--red);color:var(--red)}
+.action-btn.deny:hover{background:var(--red);color:#fff}
+.action-btn.review{border-color:#a0440a;color:#a0440a}
+.action-btn.review:hover{background:#a0440a;color:#fff}
+.update-msg{font-size:12px;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-seal">
+      <svg width="56" height="56" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="#002868" opacity=".08" stroke="#002868" stroke-width="1.5"/><text x="50" y="58" text-anchor="middle" font-size="34" fill="#002868" font-family="serif">★</text></svg>
+    </div>
+    <h1>Administrator Access</h1>
+    <p class="sub">U.S. Visa Portal — Internal Use Only</p>
+    <div class="field">
+      <label>Admin Email</label>
+      <input type="email" id="adminEmail" placeholder="admin@example.com"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="adminPass" placeholder="••••••••"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()" id="loginBtn">Sign In</button>
+    <p class="login-err" id="loginErr">Invalid credentials. Please try again.</p>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard">
+  <div class="admin-nav">
+    <div class="admin-brand"><strong>U.S. Visa Portal</strong><span>ADMIN</span></div>
+    <div style="display:flex;gap:10px">
+      <button class="logout-btn" onclick="openPricingModal()">💲 Manage Pricing</button>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="Search by name, email, or reference..." oninput="renderTable()"/>
+    <select id="statusFilter" onchange="renderTable()">
+      <option value="">All Statuses</option>
+      <option value="pending_payment">Pending Payment</option>
+      <option value="payment_received">Payment Received</option>
+      <option value="biometric_scheduled">Biometric Scheduled</option>
+      <option value="under_review">Under Review</option>
+      <option value="approved">Approved</option>
+      <option value="denied">Denied</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table class="app-table">
+      <thead>
+        <tr><th>Reference</th><th>Applicant</th><th>Visa Type</th><th>Submitted</th><th>Status</th></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none">No applications found.</div>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalName">—</h2>
+        <div class="mref" id="modalRef">—</div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ===== PRICING MODAL ===== -->
+<div class="modal-overlay" id="pricingOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div>
+        <h2>Manage Visa Fees</h2>
+        <div class="mref">Changes apply instantly to the application form and homepage</div>
+      </div>
+      <button class="close-btn" onclick="closePricingModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section">
+        <div class="detail-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">B-1/B-2 — Visitor (USD)</label><input type="number" id="price-B1B2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">F-1 — Student (USD)</label><input type="number" id="price-F1" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">H-1B — Work (USD)</label><input type="number" id="price-H1B" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">J-1 — Exchange (USD)</label><input type="number" id="price-J1" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">O-1 — Extraordinary (USD)</label><input type="number" id="price-O1" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+          <div class="field"><label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">L-1 — Intracompany (USD)</label><input type="number" id="price-L1" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px"/></div>
+        </div>
+      </div>
+      <button class="action-btn approve" style="width:100%;margin-top:8px" onclick="savePricing()">Save Pricing</button>
+      <p class="update-msg" id="pricingMsg"></p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, doc, updateDoc, getDoc, setDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB = {apiKey:"AIzaSyAQbiR_7vvcUlr0nr3NKQ2csjh-iwe0rhY",authDomain:"visa-3504e.firebaseapp.com",projectId:"visa-3504e",storageBucket:"visa-3504e.firebasestorage.app",messagingSenderId:"618621727677",appId:"1:618621727677:web:72dccc703c97a5c739d8d4"};
+const app = initializeApp(FB);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ⚠️ Restrict dashboard access to these admin emails (also enforce via Firestore security rules)
+const ADMIN_EMAILS = ['viccylay30@gmail.com'];
+
+let allApps = [];
+let currentDetailRef = null;
+
+window.doLogin = async function(){
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.style.display='none';
+  if(!email || !pass) return;
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    err.textContent = 'Invalid credentials. Please try again.';
+    err.style.display='block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+};
+
+window.doLogout = function(){ signOut(auth); };
+
+onAuthStateChanged(auth, (user)=>{
+  if(user && ADMIN_EMAILS.includes(user.email)){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadApplications();
+  } else if(user){
+    // Logged in but not authorized
+    document.getElementById('loginErr').textContent = 'This account is not authorized for admin access.';
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('loginBtn').disabled=false;
+    document.getElementById('loginBtn').textContent='Sign In';
+    signOut(auth);
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('dashboard').style.display='none';
+  }
+});
+
+async function loadApplications(){
+  try{
+    const q = query(collection(db,'visa_applications'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q);
+    allApps = [];
+    snap.forEach(d=> allApps.push(d.data()));
+  } catch(e){
+    // Fallback without orderBy in case createdAt missing on some docs
+    const snap = await getDocs(collection(db,'visa_applications'));
+    allApps = [];
+    snap.forEach(d=> allApps.push(d.data()));
+  }
+  renderStats();
+  renderTable();
+}
+
+function renderStats(){
+  const counts = {pending_payment:0,payment_received:0,biometric_scheduled:0,under_review:0,approved:0,denied:0};
+  allApps.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${allApps.length}</div><div class="stat-label">Total Applications</div></div>
+    <div class="stat-card pending"><div class="stat-num">${counts.pending_payment}</div><div class="stat-label">Pending Payment</div></div>
+    <div class="stat-card review"><div class="stat-num">${counts.under_review+counts.biometric_scheduled+counts.payment_received}</div><div class="stat-label">In Process</div></div>
+    <div class="stat-card approved"><div class="stat-num">${counts.approved}</div><div class="stat-label">Approved</div></div>
+    <div class="stat-card denied"><div class="stat-num">${counts.denied}</div><div class="stat-label">Denied</div></div>
+  `;
+}
+
+const STATUS_LABELS = {
+  pending_payment:'Pending Payment', payment_received:'Payment Received',
+  biometric_scheduled:'Biometric Scheduled', under_review:'Under Review',
+  approved:'Approved', denied:'Denied'
+};
+
+window.renderTable = function(){
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const filter = document.getElementById('statusFilter').value;
+  let rows = allApps.filter(a=>{
+    const matchesSearch = !search || (a.fullName||'').toLowerCase().includes(search) || (a.email||'').toLowerCase().includes(search) || (a.ref||'').toLowerCase().includes(search);
+    const matchesFilter = !filter || a.status === filter;
+    return matchesSearch && matchesFilter;
+  });
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('emptyState').style.display = rows.length? 'none':'block';
+  tbody.innerHTML = rows.map(a=>`
+    <tr onclick="openModal('${a.ref}')">
+      <td class="ref-cell">${a.ref}</td>
+      <td>${a.fullName||'—'}</td>
+      <td>${a.visaType||'—'}</td>
+      <td>${a.createdAt? new Date(a.createdAt.seconds*1000).toLocaleDateString() : '—'}</td>
+      <td><span class="status-pill status-${a.status}">${STATUS_LABELS[a.status]||a.status}</span></td>
+    </tr>
+  `).join('');
+};
+
+window.openModal = function(ref){
+  const a = allApps.find(x=>x.ref===ref);
+  if(!a) return;
+  currentDetailRef = ref;
+  document.getElementById('modalName').textContent = a.fullName||'Applicant';
+  document.getElementById('modalRef').textContent = a.ref;
+
+  const docs = a.documents || {};
+  const docHtml = Object.keys(docs).length
+    ? `<div class="doc-grid">${Object.entries(docs).map(([k,v])=>`<a href="${v}" target="_blank" class="doc-link">📄 ${k.replace('_',' ')}</a>`).join('')}</div>`
+    : '<p style="font-size:13px;color:var(--muted)">No documents uploaded yet.</p>';
+
+  const bioPhotos = a.biometricPhotos || {};
+  const bioLabels = {front:'Front', right:'Turn Right', left:'Turn Left', blink:'Blink'};
+  const bioHtml = Object.keys(bioPhotos).length
+    ? `<div class="bio-photo-grid">${Object.entries(bioPhotos).map(([k,v])=>`
+        <a href="${v}" target="_blank" class="bio-photo-card">
+          <img src="${v}" loading="lazy"/>
+          <span>${bioLabels[k]||k}</span>
+        </a>`).join('')}</div>`
+    : '<p style="font-size:13px;color:var(--muted)">No biometric capture submitted yet.</p>';
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-section">
+      <h4>Applicant Information</h4>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="dl">Email</div><div class="dv">${a.email||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Date of Birth</div><div class="dv">${a.dob||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Citizenship</div><div class="dv">${a.citizenship||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Occupation</div><div class="dv">${a.occupation||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Passport No.</div><div class="dv">${a.passportNum||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Passport Expiry</div><div class="dv">${a.passportExpiry||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Travel Details</h4>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="dl">Visa Type</div><div class="dv">${a.visaType||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Purpose</div><div class="dv">${a.purpose||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Arrival</div><div class="dv">${a.arrivalDate||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Departure</div><div class="dv">${a.departureDate||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Payment & Biometric</h4>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="dl">Fee Paid</div><div class="dv">${a.feePaid?'✅ Yes':'❌ No'}</div></div>
+        <div class="detail-item"><div class="dl">Payment Ref</div><div class="dv">${a.paymentRef||'—'}</div></div>
+        <div class="detail-item"><div class="dl">Biometric Location</div><div class="dv">${a.biometricLocation||'Not scheduled'}</div></div>
+        <div class="detail-item"><div class="dl">Biometric Date</div><div class="dv">${a.biometricDate||'—'} ${a.biometricTime||''}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Biometric Capture</h4>
+      ${bioHtml}
+    </div>
+    <div class="detail-section">
+      <h4>Uploaded Documents</h4>
+      ${docHtml}
+    </div>
+    <div class="detail-section">
+      <h4>Update Application Status</h4>
+      <div class="status-actions">
+        <button class="action-btn review" onclick="updateStatus('under_review')">Mark Under Review</button>
+        <button class="action-btn approve" onclick="updateStatus('approved')">Approve Visa</button>
+        <button class="action-btn deny" onclick="updateStatus('denied')">Deny Visa</button>
+      </div>
+      <p class="update-msg" id="updateMsg"></p>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+};
+
+window.closeModal = function(){ document.getElementById('modalOverlay').classList.remove('open'); };
+
+const DEFAULT_FEES = {B1B2:185,F1:185,H1B:190,J1:160,O1:460,L1:460};
+
+window.openPricingModal = async function(){
+  document.getElementById('pricingMsg').style.display='none';
+  let fees = DEFAULT_FEES;
+  try{
+    const snap = await getDoc(doc(db,'settings','fees'));
+    if(snap.exists()) fees = { ...DEFAULT_FEES, ...snap.data() };
+  } catch(e){ /* fall back to defaults if settings doc doesn't exist yet */ }
+  Object.entries(fees).forEach(([type, amount])=>{
+    const el = document.getElementById('price-'+type);
+    if(el) el.value = amount;
+  });
+  document.getElementById('pricingOverlay').classList.add('open');
+};
+
+window.closePricingModal = function(){ document.getElementById('pricingOverlay').classList.remove('open'); };
+
+window.savePricing = async function(){
+  const msg = document.getElementById('pricingMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Saving...';
+  const fees = {};
+  let valid = true;
+  Object.keys(DEFAULT_FEES).forEach(type=>{
+    const val = Number(document.getElementById('price-'+type).value);
+    if(!val || val <= 0) valid = false;
+    fees[type] = val;
+  });
+  if(!valid){
+    msg.style.color='var(--red)'; msg.textContent='All fees must be greater than 0.';
+    return;
+  }
+  try{
+    await setDoc(doc(db,'settings','fees'), { ...fees, updatedAt:serverTimestamp() }, {merge:true});
+    msg.style.color='var(--green)'; msg.textContent='✅ Pricing updated successfully.';
+    setTimeout(()=>{ closePricingModal(); }, 900);
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Failed to save pricing. Please try again.';
+  }
+};
+
+window.updateStatus = async function(newStatus){
+  const msg = document.getElementById('updateMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Updating...';
+  try{
+    await updateDoc(doc(db,'visa_applications',currentDetailRef),{
+      status:newStatus, updatedAt:serverTimestamp()
+    });
+    const idx = allApps.findIndex(x=>x.ref===currentDetailRef);
+    if(idx>-1) allApps[idx].status = newStatus;
+    msg.style.color='var(--green)'; msg.textContent='✅ Status updated successfully.';
+    renderStats(); renderTable();
+    setTimeout(()=>{ closeModal(); }, 900);
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Failed to update. Please try again.';
+  }
+};
+
+document.getElementById('adminPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
