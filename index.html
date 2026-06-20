@@ -136,9 +136,9 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
     <input type="text" id="searchBox" placeholder="Search by name, email, or reference..." oninput="renderTable()"/>
     <select id="statusFilter" onchange="renderTable()">
       <option value="">All Statuses</option>
-      <option value="pending_payment">Pending Payment</option>
-      <option value="payment_received">Payment Received</option>
-      <option value="biometric_scheduled">Biometric Scheduled</option>
+      <option value="pending_both">Pending Payment & Biometric</option>
+      <option value="paid_pending_bio">Payment Received — Biometric Pending</option>
+      <option value="bio_pending_paid">Biometric Done — Payment Pending</option>
       <option value="under_review">Under Review</option>
       <option value="approved">Approved</option>
       <option value="denied">Denied</option>
@@ -266,21 +266,44 @@ async function loadApplications(){
   renderTable();
 }
 
+// Combines feePaid + biometricScheduled + admin reviewStatus into one state,
+// matching the same logic used on the applicant-facing status.html page.
+function computeCombinedStatus(a){
+  const paid = !!a.feePaid;
+  const bio = !!a.biometricScheduled;
+  if(!paid && !bio) return 'pending_both';
+  if(paid && !bio) return 'paid_pending_bio';
+  if(!paid && bio) return 'bio_pending_paid';
+  const review = a.reviewStatus || 'pending';
+  if(review==='approved') return 'approved';
+  if(review==='denied') return 'denied';
+  return 'under_review';
+}
+
+const STATUS_BADGE_CLASS = {
+  pending_both:'status-pending_payment',
+  paid_pending_bio:'status-payment_received',
+  bio_pending_paid:'status-biometric_scheduled',
+  under_review:'status-under_review',
+  approved:'status-approved',
+  denied:'status-denied'
+};
+
 function renderStats(){
-  const counts = {pending_payment:0,payment_received:0,biometric_scheduled:0,under_review:0,approved:0,denied:0};
-  allApps.forEach(a=>{ if(counts[a.status]!==undefined) counts[a.status]++; });
+  const counts = {pending_both:0,paid_pending_bio:0,bio_pending_paid:0,under_review:0,approved:0,denied:0};
+  allApps.forEach(a=>{ const c = computeCombinedStatus(a); if(counts[c]!==undefined) counts[c]++; });
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card"><div class="stat-num">${allApps.length}</div><div class="stat-label">Total Applications</div></div>
-    <div class="stat-card pending"><div class="stat-num">${counts.pending_payment}</div><div class="stat-label">Pending Payment</div></div>
-    <div class="stat-card review"><div class="stat-num">${counts.under_review+counts.biometric_scheduled+counts.payment_received}</div><div class="stat-label">In Process</div></div>
+    <div class="stat-card pending"><div class="stat-num">${counts.pending_both}</div><div class="stat-label">Pending Payment & Biometric</div></div>
+    <div class="stat-card review"><div class="stat-num">${counts.paid_pending_bio+counts.bio_pending_paid+counts.under_review}</div><div class="stat-label">In Process</div></div>
     <div class="stat-card approved"><div class="stat-num">${counts.approved}</div><div class="stat-label">Approved</div></div>
     <div class="stat-card denied"><div class="stat-num">${counts.denied}</div><div class="stat-label">Denied</div></div>
   `;
 }
 
 const STATUS_LABELS = {
-  pending_payment:'Pending Payment', payment_received:'Payment Received',
-  biometric_scheduled:'Biometric Scheduled', under_review:'Under Review',
+  pending_both:'Pending Payment & Biometric', paid_pending_bio:'Payment Received — Biometric Pending',
+  bio_pending_paid:'Biometric Done — Payment Pending', under_review:'Under Review',
   approved:'Approved', denied:'Denied'
 };
 
@@ -289,20 +312,22 @@ window.renderTable = function(){
   const filter = document.getElementById('statusFilter').value;
   let rows = allApps.filter(a=>{
     const matchesSearch = !search || (a.fullName||'').toLowerCase().includes(search) || (a.email||'').toLowerCase().includes(search) || (a.ref||'').toLowerCase().includes(search);
-    const matchesFilter = !filter || a.status === filter;
+    const matchesFilter = !filter || computeCombinedStatus(a) === filter;
     return matchesSearch && matchesFilter;
   });
   const tbody = document.getElementById('tableBody');
   document.getElementById('emptyState').style.display = rows.length? 'none':'block';
-  tbody.innerHTML = rows.map(a=>`
+  tbody.innerHTML = rows.map(a=>{
+    const combined = computeCombinedStatus(a);
+    return `
     <tr onclick="openModal('${a.ref}')">
       <td class="ref-cell">${a.ref}</td>
       <td>${a.fullName||'—'}</td>
       <td>${a.visaType||'—'}</td>
       <td>${a.createdAt? new Date(a.createdAt.seconds*1000).toLocaleDateString() : '—'}</td>
-      <td><span class="status-pill status-${a.status}">${STATUS_LABELS[a.status]||a.status}</span></td>
+      <td><span class="status-pill ${STATUS_BADGE_CLASS[combined]}">${STATUS_LABELS[combined]}</span></td>
     </tr>
-  `).join('');
+  `;}).join('');
 };
 
 window.openModal = function(ref){
@@ -356,6 +381,7 @@ window.openModal = function(ref){
         <div class="detail-item"><div class="dl">Biometric Location</div><div class="dv">${a.biometricLocation||'Not scheduled'}</div></div>
         <div class="detail-item"><div class="dl">Biometric Date</div><div class="dv">${a.biometricDate||'—'} ${a.biometricTime||''}</div></div>
       </div>
+      ${!a.feePaid ? `<button class="action-btn approve" style="margin-top:14px" onclick="markAsPaid()">💲 Mark as Paid (Manual)</button>` : ''}
     </div>
     <div class="detail-section">
       <h4>Biometric Capture</h4>
@@ -367,10 +393,16 @@ window.openModal = function(ref){
     </div>
     <div class="detail-section">
       <h4>Update Application Status</h4>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Note: the applicant only sees Under Review / Approved / Denied once <em>both</em> payment and biometric capture are complete. Until then, they'll see a pending-payment or pending-biometric message instead.</p>
       <div class="status-actions">
         <button class="action-btn review" onclick="updateStatus('under_review')">Mark Under Review</button>
-        <button class="action-btn approve" onclick="updateStatus('approved')">Approve Visa</button>
+        <button class="action-btn approve" onclick="showApproveForm()">Approve Visa</button>
         <button class="action-btn deny" onclick="updateStatus('denied')">Deny Visa</button>
+      </div>
+      <div id="approveForm" style="display:none;margin-top:14px;padding:14px;background:var(--offwhite);border-radius:8px">
+        <label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Delivery Address for Approved Visa/Passport</label>
+        <textarea id="deliveryAddressInput" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit" placeholder="Full address where the visa/passport should be delivered">${a.deliveryAddress||''}</textarea>
+        <button class="action-btn approve" style="margin-top:10px" onclick="confirmApprove()">Confirm Approval</button>
       </div>
       <p class="update-msg" id="updateMsg"></p>
     </div>
@@ -379,6 +411,33 @@ window.openModal = function(ref){
 };
 
 window.closeModal = function(){ document.getElementById('modalOverlay').classList.remove('open'); };
+
+window.markAsPaid = async function(){
+  const msg = document.getElementById('updateMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Updating...';
+  try{
+    await updateDoc(doc(db,'visa_applications',currentDetailRef),{
+      feePaid:true, paymentRef:'manual-admin', updatedAt:serverTimestamp()
+    });
+    const idx = allApps.findIndex(x=>x.ref===currentDetailRef);
+    if(idx>-1){ allApps[idx].feePaid = true; allApps[idx].paymentRef = 'manual-admin'; }
+    msg.style.color='var(--green)'; msg.textContent='✅ Marked as paid.';
+    renderStats(); renderTable();
+    setTimeout(()=>{ openModal(currentDetailRef); }, 700); // refresh modal to reflect new state
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Failed to update. Please try again.';
+  }
+};
+
+window.showApproveForm = function(){
+  document.getElementById('approveForm').style.display = 'block';
+};
+
+window.confirmApprove = async function(){
+  const address = document.getElementById('deliveryAddressInput').value.trim();
+  if(!address){ alert('Please enter a delivery address before approving.'); return; }
+  await updateStatus('approved', address);
+};
 
 const DEFAULT_FEES = {B1B2:185,F1:185,H1B:190,J1:160,O1:460,L1:460};
 
@@ -421,15 +480,18 @@ window.savePricing = async function(){
   }
 };
 
-window.updateStatus = async function(newStatus){
+window.updateStatus = async function(newReviewStatus, deliveryAddress){
   const msg = document.getElementById('updateMsg');
   msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Updating...';
   try{
-    await updateDoc(doc(db,'visa_applications',currentDetailRef),{
-      status:newStatus, updatedAt:serverTimestamp()
-    });
+    const payload = { reviewStatus:newReviewStatus, updatedAt:serverTimestamp() };
+    if(deliveryAddress) payload.deliveryAddress = deliveryAddress;
+    await updateDoc(doc(db,'visa_applications',currentDetailRef), payload);
     const idx = allApps.findIndex(x=>x.ref===currentDetailRef);
-    if(idx>-1) allApps[idx].status = newStatus;
+    if(idx>-1){
+      allApps[idx].reviewStatus = newReviewStatus;
+      if(deliveryAddress) allApps[idx].deliveryAddress = deliveryAddress;
+    }
     msg.style.color='var(--green)'; msg.textContent='✅ Status updated successfully.';
     renderStats(); renderTable();
     setTimeout(()=>{ closeModal(); }, 900);
