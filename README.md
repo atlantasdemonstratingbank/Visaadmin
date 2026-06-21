@@ -14,6 +14,21 @@ Click **💲 Manage Pricing** in the top nav to set the MRV fee for each visa ca
 - If an applicant paid you outside Flutterwave (bank transfer, cash, etc.), open their record and click **💲 Mark as Paid (Manual)** — this sets their fee as paid without needing a real transaction.
 - **Approve Visa** now asks for a delivery address before confirming — this is what shows on the applicant's Track Status page once approved ("Your visa will be delivered to: ...").
 - Note: applicants only see Under Review / Approved / Denied once *both* payment and biometric capture are complete, regardless of when you set the review status. Before that, they see a "pending payment" or "pending biometric" message instead.
+- Once approved, a **Download Visa Document (PDF)** button appears in the applicant's detail view — same sandbox-watermarked document the applicant can download from their own Track Status page.
+
+## New: Layout Editor
+Click **🎨 Layout Editor** in the top nav to customize the visa PDF's details page:
+- Tap any field chip (First Name, Last Name, Passport No., Visa Type, dates, etc.) to drop it onto the canvas — tap the same field again for a duplicate, useful if you want the same data shown in two places
+- **+ Custom Text** adds any free-text label you type, positioned anywhere
+- Drag any placed element to reposition it; tap to select, then **Delete Selected** to remove it
+- **Upload Background Image** lets you set any image as a faint underlay behind the fields. It's automatically resized, faded, and stamped with a repeating "SAMPLE" pattern baked into the pixels before upload — this step always runs and can't be turned off, so no uploaded image (real or otherwise) can be used as a convincing security background. **Remove Background** clears it.
+- **Save Layout** writes to `settings/visaLayout` in Firestore and applies to every visa PDF from then on, both from the admin panel and from applicants' Track Status page
+- **Reset to Default** restores the built-in layout (and clears any background image)
+
+One thing that's intentionally not editable here: the tiled "SANDBOX — NOT FOR REAL USE" watermark, the red header banner, and the bottom disclaimer box always render on top of whatever you build, and aren't part of the draggable canvas. That's a fixed safety backstop, not a layout choice.
+
+## New: Visa Photo Override
+In an applicant's detail view, under **Visa Photo Override**, you can upload a photo manually — it'll be used on that applicant's visa PDF instead of their biometric capture photo. Useful if biometric wasn't completed or the capture wasn't usable. **Remove Override** reverts to the biometric photo.
 
 ## Before you deploy — one step left
 
@@ -57,6 +72,12 @@ service cloud.firestore {
     }
 
     match /settings/fees {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email == 'viccylay30@gmail.com';
+    }
+
+    match /settings/visaLayout {
       allow read: if true;
       allow write: if request.auth != null
                    && request.auth.token.email == 'viccylay30@gmail.com';

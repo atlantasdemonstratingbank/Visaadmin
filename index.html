@@ -95,6 +95,23 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 .action-btn.review{border-color:#a0440a;color:#a0440a}
 .action-btn.review:hover{background:#a0440a;color:#fff}
 .update-msg{font-size:12px;margin-top:10px;display:none}
+
+/* LAYOUT EDITOR */
+.layout-preview-wrap{display:flex;justify-content:center;padding:10px 0}
+.layout-preview{position:relative;width:306px;height:396px;background:#fff;border:1.5px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08);overflow:hidden;touch-action:none}
+.layout-preview .bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;pointer-events:none}
+.layout-preview .page-border{position:absolute;border:1px solid #002868;pointer-events:none}
+.layout-preview .header-strip{position:absolute;top:0;left:0;right:0;height:11px;background:#BF0A30;pointer-events:none}
+.layout-preview .title-hint{position:absolute;top:30px;left:0;right:0;text-align:center;font-size:8px;color:#002868;font-weight:700;pointer-events:none}
+.layout-el{position:absolute;font-size:8px;color:#1E1E2E;background:rgba(0,40,104,.06);border:1px solid rgba(0,40,104,.35);border-radius:2px;padding:1px 3px;white-space:nowrap;cursor:grab;user-select:none}
+.layout-el.selected{border:1.5px solid #BF0A30;background:rgba(191,10,48,.08)}
+.layout-el:active{cursor:grabbing}
+.layout-el.photo-el{display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#002868;background:rgba(0,40,104,.08);border:1.5px dashed #002868}
+.layout-controls{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.layout-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+.field-palette{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.field-chip{background:#f0f2f8;border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--blue);cursor:pointer}
+.field-chip:active{background:#dde3f0}
 </style>
 </head>
 <body>
@@ -126,6 +143,7 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
     <div class="admin-brand"><strong>U.S. Visa Portal</strong><span>ADMIN</span></div>
     <div style="display:flex;gap:10px">
       <button class="logout-btn" onclick="openPricingModal()">💲 Manage Pricing</button>
+      <button class="logout-btn" onclick="openLayoutEditor()">🎨 Layout Editor</button>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -197,6 +215,55 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   </div>
 </div>
 
+<!-- ===== LAYOUT EDITOR MODAL ===== -->
+<div class="modal-overlay" id="layoutOverlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <div>
+        <h2>Visa Page Layout Editor</h2>
+        <div class="mref">Tap a field to add it, then drag to position. Affects every visa PDF from now on.</div>
+      </div>
+      <button class="close-btn" onclick="closeLayoutEditor()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="layout-preview-wrap">
+        <div class="layout-preview" id="layoutPreview">
+          <div class="bg-layer" id="layoutBgLayer"></div>
+          <div class="header-strip"></div>
+          <div class="title-hint">usa</div>
+          <div class="page-border" id="pageBorderGuide"></div>
+          <!-- Draggable elements injected here by JS -->
+        </div>
+      </div>
+      <p class="layout-hint">Tap an element on the canvas to select it, then use Delete Selected to remove it. The watermark and disclaimers always render on top and aren't editable here.</p>
+
+      <div class="layout-controls" style="flex-wrap:wrap;margin-top:4px">
+        <label class="action-btn" style="cursor:pointer;display:inline-flex;align-items:center">
+          🖼️ Upload Background Image
+          <input type="file" accept="image/*" style="display:none" onchange="uploadLayoutBackground(this)"/>
+        </label>
+        <button class="action-btn" id="removeBgBtn" onclick="removeLayoutBackground()" style="display:none">Remove Background</button>
+      </div>
+      <div id="bgOpacityRow" style="display:none;align-items:center;gap:8px;margin-top:8px">
+        <label for="bgOpacitySlider" style="font-size:11px;color:var(--muted);white-space:nowrap">Background opacity</label>
+        <input type="range" id="bgOpacitySlider" min="10" max="70" step="5" value="32" style="flex:1" oninput="onBackgroundOpacityInput(this.value)"/>
+        <span id="bgOpacityValue" style="font-size:11px;color:var(--muted);width:34px;text-align:right">32%</span>
+      </div>
+      <p class="layout-hint" style="margin-top:2px">Any image you upload is automatically shrunk, faded, and stamped with a repeating "SAMPLE" pattern before it's used — this can't be turned off, so the result can never pass as a real visa background. The opacity slider only controls how visible that already-watermarked image is (capped at 70% so it stays a background, not the document).</p>
+
+      <div class="field-palette" id="fieldPalette"></div>
+
+      <div class="layout-controls" style="flex-wrap:wrap">
+        <button class="action-btn" id="customTextBtn" onclick="addCustomTextElement()">+ Custom Text</button>
+        <button class="action-btn" id="deleteSelBtn" onclick="deleteSelectedElement()" disabled>Delete Selected</button>
+        <button class="action-btn" onclick="resetLayout()">Reset to Default</button>
+        <button class="action-btn approve" onclick="saveLayout()">Save Layout</button>
+      </div>
+      <p class="update-msg" id="layoutMsg"></p>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -206,6 +273,8 @@ const FB = {apiKey:"AIzaSyAQbiR_7vvcUlr0nr3NKQ2csjh-iwe0rhY",authDomain:"visa-35
 const app = initializeApp(FB);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+const CLOUDINARY = {cloud_name:'dbgxllxdb', upload_preset:'efootball_screenshots'};
 
 // ⚠️ Restrict dashboard access to these admin emails (also enforce via Firestore security rules)
 const ADMIN_EMAILS = ['viccylay30@gmail.com'];
@@ -382,10 +451,21 @@ window.openModal = function(ref){
         <div class="detail-item"><div class="dl">Biometric Date</div><div class="dv">${a.biometricDate||'—'} ${a.biometricTime||''}</div></div>
       </div>
       ${!a.feePaid ? `<button class="action-btn approve" style="margin-top:14px" onclick="markAsPaid()">💲 Mark as Paid (Manual)</button>` : ''}
+      ${computeCombinedStatus(a)==='approved' ? `<button class="action-btn approve" style="margin-top:10px" id="adminDownloadVisaBtn" onclick="downloadVisaAdmin()">📄 Download Visa Document (PDF)</button>` : ''}
     </div>
     <div class="detail-section">
       <h4>Biometric Capture</h4>
       ${bioHtml}
+    </div>
+    <div class="detail-section">
+      <h4>Visa Photo Override</h4>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">By default the visa PDF uses the applicant's biometric capture photo. Upload a photo here to use instead — useful if biometric capture wasn't done or wasn't usable.</p>
+      ${a.manualPhotoUrl ? `<img src="${a.manualPhotoUrl}" style="width:90px;height:106px;object-fit:cover;border-radius:6px;border:1px solid var(--border);margin-bottom:10px;display:block"/>` : ''}
+      <label style="background:var(--blue);color:#fff;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;display:inline-block">
+        ${a.manualPhotoUrl ? 'Replace Photo' : 'Upload Photo'} <input type="file" accept="image/*" style="display:none" onchange="uploadManualPhoto(this)"/>
+      </label>
+      ${a.manualPhotoUrl ? ` <button class="action-btn" style="margin-left:8px" onclick="clearManualPhoto()">Remove Override</button>` : ''}
+      <p class="update-msg" id="manualPhotoMsg"></p>
     </div>
     <div class="detail-section">
       <h4>Uploaded Documents</h4>
@@ -411,6 +491,68 @@ window.openModal = function(ref){
 };
 
 window.closeModal = function(){ document.getElementById('modalOverlay').classList.remove('open'); };
+
+window.downloadVisaAdmin = async function(){
+  const a = allApps.find(x=>x.ref===currentDetailRef);
+  if(!a) return;
+  const btn = document.getElementById('adminDownloadVisaBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
+  try{
+    let elements = null;
+    let backgroundUrl = null;
+    let backgroundOpacity = 0.32;
+    try{
+      const layoutSnap = await getDoc(doc(db,'settings','visaLayout'));
+      if(layoutSnap.exists()){
+        const data = layoutSnap.data();
+        if(Array.isArray(data.elements)) elements = data.elements;
+        if(data.backgroundUrl) backgroundUrl = data.backgroundUrl;
+        if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(0.7, data.backgroundOpacity));
+      }
+    } catch(e){ /* use built-in defaults */ }
+    await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity);
+  } catch(e){
+    alert('Could not generate the document. Please try again.');
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '📄 Download Visa Document (PDF)'; }
+};
+
+window.uploadManualPhoto = async function(input){
+  const file = input.files[0];
+  if(!file) return;
+  const msg = document.getElementById('manualPhotoMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Uploading...';
+  try{
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY.upload_preset);
+    fd.append('folder', 'visa_manual_photos/'+currentDetailRef);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY.cloud_name}/image/upload`,{method:'POST',body:fd});
+    const data = await res.json();
+    if(!data.secure_url) throw new Error('Upload failed');
+    await updateDoc(doc(db,'visa_applications',currentDetailRef),{ manualPhotoUrl:data.secure_url, updatedAt:serverTimestamp() });
+    const idx = allApps.findIndex(x=>x.ref===currentDetailRef);
+    if(idx>-1) allApps[idx].manualPhotoUrl = data.secure_url;
+    msg.style.color='var(--green)'; msg.textContent='✅ Photo uploaded — will be used on this applicant\'s visa PDF.';
+    setTimeout(()=>{ openModal(currentDetailRef); }, 700);
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Upload failed. Please try again.';
+  }
+};
+
+window.clearManualPhoto = async function(){
+  const msg = document.getElementById('manualPhotoMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Removing...';
+  try{
+    await updateDoc(doc(db,'visa_applications',currentDetailRef),{ manualPhotoUrl:null, updatedAt:serverTimestamp() });
+    const idx = allApps.findIndex(x=>x.ref===currentDetailRef);
+    if(idx>-1) allApps[idx].manualPhotoUrl = null;
+    msg.style.color='var(--green)'; msg.textContent='✅ Override removed — back to biometric capture photo.';
+    setTimeout(()=>{ openModal(currentDetailRef); }, 700);
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Failed to remove. Please try again.';
+  }
+};
 
 window.markAsPaid = async function(){
   const msg = document.getElementById('updateMsg');
@@ -480,6 +622,257 @@ window.savePricing = async function(){
   }
 };
 
+// ===== LAYOUT EDITOR =====
+// PDF page is 612x792pt (Letter). Preview is scaled to 306x396px (scale 0.5).
+const PAGE_PT = { w: 612, h: 792 };
+const SCALE = 0.5;
+let currentElements = [];
+let selectedElId = null;
+let elCounter = 0;
+let currentBackgroundUrl = null;
+let currentBackgroundOpacity = 0.32;
+
+// Shrinks the uploaded image, fades it, and bakes a diagonal repeating
+// "SAMPLE" pattern directly into the pixel data (not a separate layer
+// someone could delete later). This always runs — there's no toggle
+// to skip it — so no uploaded image can be used as a convincing
+// security background, no matter what the source photo is.
+function processBackgroundImage(file){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW/img.width);
+      const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      // Fade toward white so it reads as a faint illustrative underlay
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillRect(0,0,w,h);
+      // Bake repeating SAMPLE watermark into the pixels themselves
+      ctx.fillStyle = 'rgba(110,110,110,0.55)';
+      ctx.font = 'bold '+Math.round(w/16)+'px sans-serif';
+      ctx.textAlign = 'center';
+      for(let y=0; y<h+ (h/5); y+=h/5){
+        for(let x=0; x<w+(w/2); x+=w/2.2){
+          ctx.save();
+          ctx.translate(x,y);
+          ctx.rotate(-Math.PI/7);
+          ctx.fillText('SAMPLE', 0, 0);
+          ctx.restore();
+        }
+      }
+      canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error('canvas export failed')), 'image/jpeg', 0.85);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function applyBackgroundPreview(url, opacity){
+  if(typeof opacity === 'number') currentBackgroundOpacity = opacity;
+  const layer = document.getElementById('layoutBgLayer');
+  layer.style.backgroundImage = url ? `url('${url}')` : '';
+  layer.style.opacity = currentBackgroundOpacity;
+  document.getElementById('removeBgBtn').style.display = url ? 'inline-block' : 'none';
+  document.getElementById('bgOpacityRow').style.display = url ? 'flex' : 'none';
+  const pct = Math.round(currentBackgroundOpacity*100);
+  document.getElementById('bgOpacitySlider').value = pct;
+  document.getElementById('bgOpacityValue').textContent = pct+'%';
+}
+
+window.onBackgroundOpacityInput = function(val){
+  currentBackgroundOpacity = Math.max(0.1, Math.min(0.7, val/100));
+  document.getElementById('layoutBgLayer').style.opacity = currentBackgroundOpacity;
+  document.getElementById('bgOpacityValue').textContent = Math.round(currentBackgroundOpacity*100)+'%';
+};
+
+window.uploadLayoutBackground = async function(input){
+  const file = input.files[0];
+  if(!file) return;
+  const msg = document.getElementById('layoutMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Processing image (resizing + watermarking)...';
+  try{
+    const blob = await processBackgroundImage(file);
+    msg.textContent = 'Uploading...';
+    const fd = new FormData();
+    fd.append('file', blob);
+    fd.append('upload_preset', CLOUDINARY.upload_preset);
+    fd.append('folder', 'visa_layout_backgrounds');
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY.cloud_name}/image/upload`,{method:'POST',body:fd});
+    const data = await res.json();
+    if(!data.secure_url) throw new Error('Upload failed');
+    currentBackgroundUrl = data.secure_url;
+    applyBackgroundPreview(currentBackgroundUrl, currentBackgroundOpacity);
+    msg.style.color='var(--green)'; msg.textContent='✅ Background set (auto-watermarked — not editable here, see layout hint above).';
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Background upload failed. Please try again.';
+  }
+  input.value = '';
+};
+
+window.removeLayoutBackground = function(){
+  currentBackgroundUrl = null;
+  currentBackgroundOpacity = 0.32;
+  applyBackgroundPreview(null, 0.32);
+};
+
+function ptToPx(pt){ return pt * SCALE; }
+function pxToPt(px){ return px / SCALE; }
+
+function buildFieldPalette(){
+  const wrap = document.getElementById('fieldPalette');
+  wrap.innerHTML = window.VISA_FIELD_DEFS.map(f=>
+    `<div class="field-chip" onclick="addFieldElement('${f.key}')">+ ${f.label}</div>`
+  ).join('') + `<div class="field-chip" onclick="addPhotoElement()">+ Photo</div>`;
+}
+
+function renderLayoutPreview(){
+  const preview = document.getElementById('layoutPreview');
+  // Remove previously rendered elements (keep the static guide divs)
+  preview.querySelectorAll('.layout-el').forEach(el=>el.remove());
+
+  currentElements.forEach(el=>{
+    const div = document.createElement('div');
+    div.dataset.id = el.id;
+    if(el.type === 'photo'){
+      div.className = 'layout-el photo-el' + (el.id===selectedElId ? ' selected' : '');
+      div.style.width = ptToPx(el.w)+'px';
+      div.style.height = ptToPx(el.h)+'px';
+      div.textContent = 'PHOTO';
+    } else {
+      div.className = 'layout-el' + (el.id===selectedElId ? ' selected' : '');
+      const def = el.type==='field' ? window.VISA_FIELD_DEFS.find(f=>f.key===el.fieldKey) : null;
+      div.textContent = el.type==='field' ? (def ? def.label : el.fieldKey) : (el.content || '(empty text)');
+    }
+    div.style.left = ptToPx(el.x)+'px';
+    div.style.top = ptToPx(el.y)+'px';
+    div.addEventListener('pointerdown', e=>{ selectElement(el.id); });
+    makeDraggable(div, (left, top)=>{
+      el.x = Math.round(pxToPt(left));
+      el.y = Math.round(pxToPt(top));
+    });
+    document.getElementById('layoutPreview').appendChild(div);
+  });
+
+  const borderGuide = document.getElementById('pageBorderGuide');
+  borderGuide.style.left = ptToPx(36)+'px';
+  borderGuide.style.top = ptToPx(40)+'px';
+  borderGuide.style.width = ptToPx(PAGE_PT.w-72)+'px';
+  borderGuide.style.height = ptToPx(520)+'px';
+}
+
+function selectElement(id){
+  selectedElId = id;
+  document.getElementById('deleteSelBtn').disabled = false;
+  renderLayoutPreview();
+}
+
+function makeDraggable(el, onMove){
+  let dragging = false, startX, startY, origLeft, origTop;
+  el.addEventListener('pointerdown', e=>{
+    dragging = true;
+    el.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY;
+    origLeft = parseFloat(el.style.left)||0;
+    origTop = parseFloat(el.style.top)||0;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    const preview = document.getElementById('layoutPreview');
+    const maxX = preview.clientWidth - el.offsetWidth;
+    const maxY = preview.clientHeight - el.offsetHeight;
+    const newLeft = Math.max(0, Math.min(maxX, origLeft+dx));
+    const newTop = Math.max(0, Math.min(maxY, origTop+dy));
+    el.style.left = newLeft+'px';
+    el.style.top = newTop+'px';
+    onMove(newLeft, newTop);
+  });
+  el.addEventListener('pointerup', ()=>{ dragging = false; });
+  el.addEventListener('pointercancel', ()=>{ dragging = false; });
+}
+
+window.addFieldElement = function(fieldKey){
+  elCounter++;
+  const id = 'el_'+Date.now()+'_'+elCounter;
+  currentElements.push({ id, type:'field', fieldKey, x:80, y:80, fontSize:10 });
+  selectElement(id);
+};
+
+window.addPhotoElement = function(){
+  // Only one photo is meaningful, but we don't hard-block duplicates for consistency
+  elCounter++;
+  const id = 'el_'+Date.now()+'_'+elCounter;
+  currentElements.push({ id, type:'photo', x:60, y:130, w:110, h:130 });
+  selectElement(id);
+};
+
+window.addCustomTextElement = function(){
+  const text = prompt('Enter the text to place on the document:');
+  if(text === null || text.trim()==='') return;
+  elCounter++;
+  const id = 'el_'+Date.now()+'_'+elCounter;
+  currentElements.push({ id, type:'text', content:text.trim(), x:80, y:80, fontSize:10 });
+  selectElement(id);
+};
+
+window.deleteSelectedElement = function(){
+  if(!selectedElId) return;
+  currentElements = currentElements.filter(e=>e.id!==selectedElId);
+  selectedElId = null;
+  document.getElementById('deleteSelBtn').disabled = true;
+  renderLayoutPreview();
+};
+
+window.openLayoutEditor = async function(){
+  document.getElementById('layoutMsg').style.display='none';
+  buildFieldPalette();
+  currentElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS));
+  currentBackgroundUrl = null;
+  currentBackgroundOpacity = 0.32;
+  selectedElId = null;
+  document.getElementById('deleteSelBtn').disabled = true;
+  try{
+    const snap = await getDoc(doc(db,'settings','visaLayout'));
+    if(snap.exists()){
+      const data = snap.data();
+      if(Array.isArray(data.elements) && data.elements.length) currentElements = data.elements;
+      if(data.backgroundUrl) currentBackgroundUrl = data.backgroundUrl;
+      if(typeof data.backgroundOpacity === 'number') currentBackgroundOpacity = Math.max(0.1, Math.min(0.7, data.backgroundOpacity));
+    }
+  } catch(e){ /* use defaults */ }
+  document.getElementById('layoutOverlay').classList.add('open');
+  applyBackgroundPreview(currentBackgroundUrl, currentBackgroundOpacity);
+  renderLayoutPreview();
+};
+
+window.closeLayoutEditor = function(){ document.getElementById('layoutOverlay').classList.remove('open'); };
+
+window.resetLayout = function(){
+  currentElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS));
+  currentBackgroundUrl = null;
+  currentBackgroundOpacity = 0.32;
+  applyBackgroundPreview(null, 0.32);
+  selectedElId = null;
+  document.getElementById('deleteSelBtn').disabled = true;
+  renderLayoutPreview();
+};
+
+window.saveLayout = async function(){
+  const msg = document.getElementById('layoutMsg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Saving...';
+  try{
+    await setDoc(doc(db,'settings','visaLayout'), { elements: currentElements, backgroundUrl: currentBackgroundUrl || null, backgroundOpacity: currentBackgroundOpacity, updatedAt:serverTimestamp() });
+    msg.style.color='var(--green)'; msg.textContent='✅ Layout saved. New PDFs will use this layout.';
+    setTimeout(()=>{ closeLayoutEditor(); }, 1000);
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='Failed to save layout. Please try again.';
+  }
+};
+
 window.updateStatus = async function(newReviewStatus, deliveryAddress){
   const msg = document.getElementById('updateMsg');
   msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Updating...';
@@ -502,5 +895,7 @@ window.updateStatus = async function(newReviewStatus, deliveryAddress){
 
 document.getElementById('adminPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="visa-pdf.js"></script>
 </body>
 </html>
