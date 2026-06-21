@@ -246,10 +246,10 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
       </div>
       <div id="bgOpacityRow" style="display:none;align-items:center;gap:8px;margin-top:8px">
         <label for="bgOpacitySlider" style="font-size:11px;color:var(--muted);white-space:nowrap">Background opacity</label>
-        <input type="range" id="bgOpacitySlider" min="10" max="70" step="5" value="32" style="flex:1" oninput="onBackgroundOpacityInput(this.value)"/>
+        <input type="range" id="bgOpacitySlider" min="10" max="100" step="5" value="32" style="flex:1" oninput="onBackgroundOpacityInput(this.value)"/>
         <span id="bgOpacityValue" style="font-size:11px;color:var(--muted);width:34px;text-align:right">32%</span>
       </div>
-      <p class="layout-hint" style="margin-top:2px">Any image you upload is automatically shrunk, faded, and stamped with a repeating "SAMPLE" pattern before it's used — this can't be turned off, so the result can never pass as a real visa background. The opacity slider only controls how visible that already-watermarked image is (capped at 70% so it stays a background, not the document).</p>
+      <p class="layout-hint" style="margin-top:2px">Any image you upload is automatically shrunk, faded, and stamped with a repeating "usa" pattern before it's used — this can't be turned off, so the result can never pass as a real visa background. The opacity slider only controls how visible that already-watermarked image is (capped at 70% so it stays a background, not the document).</p>
 
       <div class="field-palette" id="fieldPalette"></div>
 
@@ -507,7 +507,7 @@ window.downloadVisaAdmin = async function(){
         const data = layoutSnap.data();
         if(Array.isArray(data.elements)) elements = data.elements;
         if(data.backgroundUrl) backgroundUrl = data.backgroundUrl;
-        if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(0.7, data.backgroundOpacity));
+        if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(1.0, data.backgroundOpacity));
       }
     } catch(e){ /* use built-in defaults */ }
     await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity);
@@ -633,7 +633,7 @@ let currentBackgroundUrl = null;
 let currentBackgroundOpacity = 0.32;
 
 // Shrinks the uploaded image, fades it, and bakes a diagonal repeating
-// "SAMPLE" pattern directly into the pixel data (not a separate layer
+// "usa" pattern directly into the pixel data (not a separate layer
 // someone could delete later). This always runs — there's no toggle
 // to skip it — so no uploaded image can be used as a convincing
 // security background, no matter what the source photo is.
