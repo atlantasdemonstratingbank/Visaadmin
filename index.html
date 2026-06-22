@@ -117,6 +117,8 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 .crop-handle[data-h="sw"]{left:-9px;bottom:-9px;cursor:nesw-resize}
 .crop-handle[data-h="se"]{right:-9px;bottom:-9px;cursor:nwse-resize}
 .layout-controls{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.page-size-btn{text-align:center;line-height:1.4;padding:6px 10px}
+.page-size-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .layout-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
 .field-palette{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .field-chip{background:#f0f2f8;border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--blue);cursor:pointer}
@@ -152,7 +154,7 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
     <div class="admin-brand"><strong>U.S. Visa Portal</strong><span>ADMIN</span></div>
     <div style="display:flex;gap:10px">
       <button class="logout-btn" onclick="openPricingModal()">💲 Manage Pricing</button>
-      <button class="logout-btn" onclick="openLayoutEditor()">🎨 Layout Editor</button>
+      <button class="logout-btn" onclick="openDocEditor()">🎨 Layout Editor</button>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -241,42 +243,10 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
           <div class="header-strip"></div>
           <div class="title-hint">SANDBOX — NOT REAL</div>
           <div class="page-border" id="pageBorderGuide"></div>
-          <!-- Draggable elements injected here by JS -->
         </div>
       </div>
-      <p class="layout-hint">Tap an element on the canvas to select it, then use Delete Selected to remove it. The watermark and disclaimers always render on top and aren't editable here.</p>
-
-      <div class="layout-controls" style="flex-wrap:wrap;margin-top:4px">
-        <label class="action-btn" style="cursor:pointer;display:inline-flex;align-items:center">
-          🖼️ Choose Image
-          <input type="file" accept="image/*" style="display:none" onchange="loadBackgroundSource(this)"/>
-        </label>
-        <button class="action-btn" onclick="openCropWithSource(window.DEFAULT_BG_SOURCE)">Use Built-in Image</button>
-        <button class="action-btn" id="removeBgBtn" onclick="removeLayoutBackground()" style="display:none">Remove Background</button>
-      </div>
-
-      <div id="cropSection" style="display:none">
-        <div class="crop-wrap" id="cropWrap">
-          <img id="cropSourceImg" draggable="false"/>
-          <div class="crop-box" id="cropBox">
-            <div class="crop-handle" data-h="nw"></div>
-            <div class="crop-handle" data-h="ne"></div>
-            <div class="crop-handle" data-h="sw"></div>
-            <div class="crop-handle" data-h="se"></div>
-          </div>
-        </div>
-        <p class="layout-hint" style="margin-top:6px">Drag the box to move, drag a corner to resize freeform.</p>
-        <button class="action-btn approve" style="width:100%;margin-top:4px" onclick="applyBackgroundCrop()">Use This Crop as Background</button>
-      </div>
-
-      <div id="bgOpacityRow" style="display:none;align-items:center;gap:8px;margin-top:10px">
-        <label for="bgOpacitySlider" style="font-size:11px;color:var(--muted);white-space:nowrap">Background opacity</label>
-        <input type="range" id="bgOpacitySlider" min="10" max="100" step="5" value="32" style="flex:1" oninput="onBackgroundOpacityInput(this.value)"/>
-        <span id="bgOpacityValue" style="font-size:11px;color:var(--muted);width:34px;text-align:right">32%</span>
-      </div>
-
+      <p class="layout-hint">Tap an element on the canvas to select it, then use Delete Selected to remove it.</p>
       <div class="field-palette" id="fieldPalette"></div>
-
       <div class="layout-controls" style="flex-wrap:wrap">
         <button class="action-btn" id="customTextBtn" onclick="addCustomTextElement()">+ Custom Text</button>
         <button class="action-btn" id="deleteSelBtn" onclick="deleteSelectedElement()" disabled>Delete Selected</button>
@@ -286,6 +256,93 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
       <p class="update-msg" id="layoutMsg"></p>
     </div>
   </div>
+</div>
+
+<!-- CapCut-style full-screen document editor -->
+<div id="docEditor" style="display:none;position:fixed;inset:0;z-index:300;background:#1a1a2e;flex-direction:column;font-family:'Segoe UI',system-ui,sans-serif">
+
+  <!-- Top toolbar -->
+  <div id="editorTopbar" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#16213e;border-bottom:1px solid #0f3460;flex-shrink:0;flex-wrap:wrap">
+    <span style="font-weight:700;color:#e94560;font-size:14px;margin-right:4px">📄 Doc Editor</span>
+
+    <!-- Doc size -->
+    <select id="docSizeSelect" onchange="onDocSizeChange(this.value)" style="background:#0f3460;color:#fff;border:1px solid #e94560;border-radius:6px;padding:5px 8px;font-size:12px">
+      <option value="540,520">Default (540×520)</option>
+      <option value="612,792">Letter (612×792)</option>
+      <option value="595,842">A4 (595×842)</option>
+      <option value="540,360">Wide (540×360)</option>
+      <option value="480,340">Card (480×340)</option>
+      <option value="540,720">Full Page (540×720)</option>
+    </select>
+
+    <!-- Zoom -->
+    <div style="display:flex;align-items:center;gap:4px">
+      <button onclick="editorZoom(-0.1)" style="background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:14px">−</button>
+      <span id="editorZoomLabel" style="color:#aaa;font-size:12px;min-width:36px;text-align:center">100%</span>
+      <button onclick="editorZoom(0.1)" style="background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:14px">+</button>
+    </div>
+
+    <!-- Snap grid -->
+    <label style="color:#aaa;font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+      <input type="checkbox" id="snapGrid" checked/> Snap
+    </label>
+
+    <!-- BG controls -->
+    <label style="background:#0f3460;color:#fff;border:1px solid #333;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">
+      🖼 BG Image <input type="file" accept="image/*" style="display:none" onchange="editorLoadBg(this)"/>
+    </label>
+    <button onclick="editorUsePanda()" style="background:#0f3460;color:#e94560;border:1px solid #e94560;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">🐼 Panda</button>
+    <button onclick="editorRemoveBg()" style="background:#0f3460;color:#aaa;border:1px solid #333;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Remove BG</button>
+
+    <!-- Opacity when BG present -->
+    <div id="edBgOpRow" style="display:none;align-items:center;gap:4px">
+      <span style="color:#aaa;font-size:11px">BG Opacity</span>
+      <input type="range" min="10" max="100" value="100" id="edBgOpSlider" oninput="editorBgOpacity(this.value)" style="width:80px;accent-color:#e94560"/>
+      <span id="edBgOpVal" style="color:#e94560;font-size:11px">100%</span>
+    </div>
+
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button onclick="closeDocEditor()" style="background:transparent;color:#aaa;border:1px solid #333;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">Cancel</button>
+      <button onclick="saveDocEditor()" style="background:#e94560;color:#fff;border:none;border-radius:6px;padding:6px 18px;font-size:13px;font-weight:700;cursor:pointer">Save Layout</button>
+    </div>
+  </div>
+
+  <!-- Main area: layers | canvas | properties -->
+  <div style="display:flex;flex:1;overflow:hidden">
+
+    <!-- Left: Layers + Add fields -->
+    <div style="width:170px;background:#16213e;border-right:1px solid #0f3460;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden">
+      <div style="padding:8px 10px;border-bottom:1px solid #0f3460;font-size:11px;font-weight:700;color:#e94560;text-transform:uppercase;letter-spacing:.5px">Fields</div>
+      <div id="edFieldPalette" style="padding:6px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1"></div>
+      <div style="padding:6px;border-top:1px solid #0f3460">
+        <button onclick="edAddCustomText()" style="width:100%;background:#0f3460;color:#e94560;border:1px dashed #e94560;border-radius:6px;padding:7px;font-size:12px;cursor:pointer">+ Custom Text</button>
+        <button onclick="edAddPhoto()" style="width:100%;background:#0f3460;color:#aaa;border:1px dashed #555;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;margin-top:4px">+ Photo Box</button>
+      </div>
+      <div style="padding:6px;border-top:1px solid #0f3460">
+        <div style="font-size:11px;font-weight:700;color:#e94560;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Layers</div>
+        <div id="edLayersList" style="display:flex;flex-direction:column;gap:3px;max-height:140px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- Center: canvas stage -->
+    <div id="edStage" style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:30px;background:#1a1a2e;touch-action:none">
+      <div id="edCanvasWrap" style="position:relative;flex-shrink:0;box-shadow:0 0 0 1px #0f3460,0 8px 40px rgba(0,0,0,.6)">
+        <div id="edBgLayer" style="position:absolute;inset:0;background-size:cover;background-position:center;pointer-events:none"></div>
+        <div id="edCanvas" style="position:relative;overflow:visible"></div>
+        <div id="edGridOverlay" style="position:absolute;inset:0;pointer-events:none;opacity:0.07"></div>
+      </div>
+    </div>
+
+    <!-- Right: Properties panel -->
+    <div style="width:190px;background:#16213e;border-left:1px solid #0f3460;flex-shrink:0;overflow-y:auto">
+      <div style="padding:8px 10px;border-bottom:1px solid #0f3460;font-size:11px;font-weight:700;color:#e94560;text-transform:uppercase;letter-spacing:.5px">Properties</div>
+      <div id="edPropsPanel" style="padding:10px">
+        <p style="color:#555;font-size:12px;text-align:center;margin-top:20px">Select an element</p>
+      </div>
+    </div>
+  </div>
+
+  <p id="editorMsg" style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#0f3460;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;display:none;z-index:400"></p>
 </div>
 
 <script type="module">
@@ -522,7 +579,7 @@ window.downloadVisaAdmin = async function(){
   const btn = document.getElementById('adminDownloadVisaBtn');
   if(btn){ btn.disabled = true; btn.textContent = '...'; }
   try{
-    let elements = null, backgroundUrl = null, backgroundOpacity = 0.32;
+    let elements = null, backgroundUrl = null, backgroundOpacity = 0.32, savedW = 540, savedH = 520;
     try{
       const layoutSnap = await getDoc(doc(db,'settings','visaLayout'));
       if(layoutSnap.exists()){
@@ -530,9 +587,11 @@ window.downloadVisaAdmin = async function(){
         if(Array.isArray(data.elements)) elements = data.elements;
         if(data.backgroundUrl) backgroundUrl = data.backgroundUrl;
         if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(1, data.backgroundOpacity));
+        if(typeof data.visaBoxW === 'number') savedW = data.visaBoxW;
+        if(typeof data.visaBoxH === 'number') savedH = data.visaBoxH;
       }
     } catch(e){}
-    await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity);
+    await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity, savedW, savedH);
   } catch(e){
     alert('Could not generate the document. Please try again.');
   }
@@ -655,6 +714,15 @@ let currentBackgroundUrl = null;
 let currentBackgroundOpacity = 0.32;
 let cropRect = { x:0, y:0, w:0, h:0 };
 window.DEFAULT_BG_SOURCE = 'bg-default.png';
+let visaBoxW = 540, visaBoxH = 520;
+
+window.setPageSize = function(btn){
+  document.querySelectorAll('.page-size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  visaBoxW = parseInt(btn.dataset.w);
+  visaBoxH = parseInt(btn.dataset.h);
+  renderLayoutPreview();
+};
 
 function bakeBackgroundFromCanvas(source){
   return new Promise((resolve, reject)=>{
@@ -817,8 +885,8 @@ function renderLayoutPreview(){
   const borderGuide = document.getElementById('pageBorderGuide');
   borderGuide.style.left = ptToPx(36)+'px';
   borderGuide.style.top = ptToPx(40)+'px';
-  borderGuide.style.width = ptToPx(PAGE_PT.w-72)+'px';
-  borderGuide.style.height = ptToPx(520)+'px';
+  borderGuide.style.width = ptToPx(visaBoxW)+'px';
+  borderGuide.style.height = ptToPx(visaBoxH)+'px';
 }
 
 function selectElement(id){
@@ -893,52 +961,417 @@ window.deleteSelectedElement = function(){
   renderLayoutPreview();
 };
 
-window.openLayoutEditor = async function(){
-  document.getElementById('layoutMsg').style.display='none';
-  document.getElementById('cropSection').style.display='none';
-  buildFieldPalette();
-  currentElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS));
-  currentBackgroundUrl = null;
-  currentBackgroundOpacity = 0.32;
-  selectedElId = null;
-  document.getElementById('deleteSelBtn').disabled = true;
+// ═══════════════════════════════════════════════
+// FULL-SCREEN DOCUMENT EDITOR
+// ═══════════════════════════════════════════════
+let edElements = [];
+let edSelected = null;
+let edCounter = 0;
+let edZoom = 1;
+let edDocW = 540, edDocH = 520;
+let edBgUrl = null, edBgOpacity = 1;
+let edBgRawSrc = null;
+
+const SNAP = 5;
+
+function edSnap(v){ return document.getElementById('snapGrid').checked ? Math.round(v/SNAP)*SNAP : v; }
+
+function edMsg(txt, color='#4ade80'){
+  const m = document.getElementById('editorMsg');
+  m.textContent = txt; m.style.color = color; m.style.display = 'block';
+  clearTimeout(m._t); m._t = setTimeout(()=>{ m.style.display='none'; }, 2500);
+}
+
+// Open editor — load saved layout from Firestore
+window.openDocEditor = async function(){
+  edElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS || []));
+  edSelected = null; edZoom = 1;
+  edDocW = 540; edDocH = 520;
+  edBgUrl = null; edBgOpacity = 1; edBgRawSrc = null;
+  document.getElementById('docSizeSelect').value = '540,520';
   try{
     const snap = await getDoc(doc(db,'settings','visaLayout'));
     if(snap.exists()){
       const data = snap.data();
-      if(Array.isArray(data.elements) && data.elements.length) currentElements = data.elements;
-      if(data.backgroundUrl) currentBackgroundUrl = data.backgroundUrl;
-      if(typeof data.backgroundOpacity === 'number') currentBackgroundOpacity = Math.max(0.1, Math.min(1, data.backgroundOpacity));
+      if(Array.isArray(data.elements)&&data.elements.length) edElements = data.elements;
+      if(data.backgroundUrl){ edBgUrl = data.backgroundUrl; edBgRawSrc = data.backgroundUrl; }
+      if(typeof data.backgroundOpacity==='number') edBgOpacity = data.backgroundOpacity;
+      if(typeof data.visaBoxW==='number') edDocW = data.visaBoxW;
+      if(typeof data.visaBoxH==='number') edDocH = data.visaBoxH;
+      const key = `${edDocW},${edDocH}`;
+      const sel = document.getElementById('docSizeSelect');
+      if([...sel.options].some(o=>o.value===key)) sel.value = key;
     }
-  } catch(e){ /* use defaults */ }
-  document.getElementById('layoutOverlay').classList.add('open');
-  applyBackgroundPreview(currentBackgroundUrl, currentBackgroundOpacity);
-  renderLayoutPreview();
+  } catch(e){}
+  document.getElementById('docEditor').style.display = 'flex';
+  edBuildFieldPalette();
+  edApplyBg();
+  edRender();
+  edUpdateZoom();
 };
 
-window.closeLayoutEditor = function(){ document.getElementById('layoutOverlay').classList.remove('open'); };
-
-window.resetLayout = function(){
-  currentElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS));
-  currentBackgroundUrl = null; currentBackgroundOpacity = 0.32;
-  applyBackgroundPreview(null, 0.32);
-  document.getElementById('cropSection').style.display='none';
-  selectedElId = null;
-  document.getElementById('deleteSelBtn').disabled = true;
-  renderLayoutPreview();
+window.closeDocEditor = function(){
+  document.getElementById('docEditor').style.display = 'none';
 };
 
-window.saveLayout = async function(){
-  const msg = document.getElementById('layoutMsg');
-  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Saving...';
+// Save to Firestore
+window.saveDocEditor = async function(){
+  const msg = document.getElementById('editorMsg');
+  msg.textContent = 'Saving...'; msg.style.color='#fff'; msg.style.display='block';
   try{
-    await setDoc(doc(db,'settings','visaLayout'), { elements: currentElements, backgroundUrl: currentBackgroundUrl||null, backgroundOpacity: currentBackgroundOpacity, updatedAt:serverTimestamp() });
-    msg.style.color='var(--green)'; msg.textContent='✅ Layout saved. New PDFs will use this layout.';
-    setTimeout(()=>{ closeLayoutEditor(); }, 1000);
+    await setDoc(doc(db,'settings','visaLayout'),{
+      elements: edElements,
+      backgroundUrl: edBgUrl||null,
+      backgroundOpacity: edBgOpacity,
+      visaBoxW: edDocW,
+      visaBoxH: edDocH,
+      updatedAt: serverTimestamp()
+    });
+    edMsg('✅ Layout saved!');
+    setTimeout(()=>{ closeDocEditor(); }, 900);
   } catch(e){
-    msg.style.color='var(--red)'; msg.textContent='Failed to save layout. Please try again.';
+    edMsg('❌ Save failed. Please try again.','#f87171');
   }
 };
+
+// ── Doc size change ──
+window.onDocSizeChange = function(val){
+  const [w,h] = val.split(',').map(Number);
+  edDocW = w; edDocH = h;
+  edRender();
+};
+
+// ── Zoom ──
+window.editorZoom = function(delta){
+  edZoom = Math.max(0.3, Math.min(2.5, edZoom+delta));
+  edUpdateZoom();
+};
+function edUpdateZoom(){
+  const wrap = document.getElementById('edCanvasWrap');
+  wrap.style.transform = `scale(${edZoom})`;
+  wrap.style.transformOrigin = 'top center';
+  document.getElementById('editorZoomLabel').textContent = Math.round(edZoom*100)+'%';
+}
+
+// ── Background ──
+window.editorLoadBg = function(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{ edBgRawSrc = e.target.result; edUploadBg(edBgRawSrc); };
+  reader.readAsDataURL(file); input.value='';
+};
+
+window.editorUsePanda = function(){
+  edBgRawSrc = 'bg-default.png';
+  edUploadBg(edBgRawSrc);
+};
+
+async function edUploadBg(src){
+  edMsg('Uploading background...','#fff');
+  try{
+    const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.crossOrigin='anonymous'; i.src=src; });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img,0,0);
+    const blob = await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.88));
+    const fd = new FormData();
+    fd.append('file',blob); fd.append('upload_preset',CLOUDINARY.upload_preset); fd.append('folder','visa_layout_backgrounds');
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY.cloud_name}/image/upload`,{method:'POST',body:fd});
+    const data = await res.json();
+    if(!data.secure_url) throw new Error('upload failed');
+    edBgUrl = data.secure_url;
+    edApplyBg();
+    edMsg('✅ Background set!');
+  } catch(e){ edMsg('❌ Upload failed','#f87171'); }
+}
+
+function edApplyBg(){
+  const layer = document.getElementById('edBgLayer');
+  layer.style.backgroundImage = edBgUrl ? `url('${edBgUrl}')` : '';
+  layer.style.opacity = edBgOpacity;
+  const row = document.getElementById('edBgOpRow');
+  row.style.display = edBgUrl ? 'flex' : 'none';
+  document.getElementById('edBgOpSlider').value = Math.round(edBgOpacity*100);
+  document.getElementById('edBgOpVal').textContent = Math.round(edBgOpacity*100)+'%';
+}
+
+window.editorBgOpacity = function(v){
+  edBgOpacity = v/100;
+  document.getElementById('edBgLayer').style.opacity = edBgOpacity;
+  document.getElementById('edBgOpVal').textContent = v+'%';
+};
+
+window.editorRemoveBg = function(){ edBgUrl=null; edBgRawSrc=null; edApplyBg(); };
+
+// ── Field palette ──
+function edBuildFieldPalette(){
+  const pal = document.getElementById('edFieldPalette');
+  pal.innerHTML = '';
+  (window.VISA_FIELD_DEFS||[]).forEach(f=>{
+    const btn = document.createElement('button');
+    btn.textContent = f.label;
+    btn.style.cssText = 'width:100%;background:#0f3460;color:#ccc;border:1px solid #333;border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;text-align:left';
+    btn.onclick = ()=> edAddField(f.key, f.label);
+    pal.appendChild(btn);
+  });
+}
+
+// ── Add elements ──
+function edAddField(key, label){
+  edCounter++;
+  const el = { id:'el_'+Date.now()+'_'+edCounter, type:'field', fieldKey:key, label, x:40, y:60, w:120, h:22, fontSize:10, fontWeight:'normal', color:'#1e1e2e', align:'left' };
+  edElements.push(el);
+  edRender(); edSelectEl(el.id);
+}
+
+window.edAddCustomText = function(){
+  const txt = prompt('Enter text:','Custom Label');
+  if(!txt) return;
+  edCounter++;
+  const el = { id:'el_'+Date.now()+'_'+edCounter, type:'text', content:txt, x:40, y:80, w:160, h:24, fontSize:11, fontWeight:'normal', color:'#1e1e2e', align:'left' };
+  edElements.push(el);
+  edRender(); edSelectEl(el.id);
+};
+
+window.edAddPhoto = function(){
+  edCounter++;
+  const el = { id:'el_'+Date.now()+'_'+edCounter, type:'photo', x:36, y:60, w:90, h:108, fontSize:10, color:'#002868' };
+  edElements.push(el);
+  edRender(); edSelectEl(el.id);
+};
+
+// ── Render canvas ──
+function edRender(){
+  const canvas = document.getElementById('edCanvas');
+  const wrap = document.getElementById('edCanvasWrap');
+  canvas.style.width = edDocW+'px';
+  canvas.style.height = edDocH+'px';
+  wrap.style.width = edDocW+'px';
+  wrap.style.height = edDocH+'px';
+  canvas.innerHTML = '';
+
+  // Grid overlay
+  const grid = document.getElementById('edGridOverlay');
+  grid.style.backgroundImage = `linear-gradient(#4444ff 1px,transparent 1px),linear-gradient(90deg,#4444ff 1px,transparent 1px)`;
+  grid.style.backgroundSize = `${SNAP*4}px ${SNAP*4}px`;
+
+  edElements.forEach(el=>{ canvas.appendChild(edMakeElDiv(el)); });
+  edUpdateLayers();
+}
+
+function edMakeElDiv(el){
+  const div = document.createElement('div');
+  div.dataset.id = el.id;
+  div.style.position = 'absolute';
+  div.style.left = el.x+'px';
+  div.style.top = el.y+'px';
+  div.style.width = el.w+'px';
+  div.style.minHeight = el.h+'px';
+  div.style.fontSize = (el.fontSize||10)+'px';
+  div.style.fontWeight = el.fontWeight||'normal';
+  div.style.color = el.color||'#1e1e2e';
+  div.style.textAlign = el.align||'left';
+  div.style.cursor = 'grab';
+  div.style.userSelect = 'none';
+  div.style.touchAction = 'none';
+  div.style.padding = '2px 4px';
+  div.style.boxSizing = 'border-box';
+  div.style.whiteSpace = 'nowrap';
+
+  const isSelected = el.id === edSelected;
+
+  if(el.type==='photo'){
+    div.style.border = isSelected ? '2px solid #e94560' : '1.5px dashed #002868';
+    div.style.background = 'rgba(0,40,104,0.06)';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'center';
+    div.style.fontSize = '10px';
+    div.style.fontWeight = '700';
+    div.style.color = el.color||'#002868';
+    div.textContent = 'PHOTO';
+  } else {
+    div.style.border = isSelected ? '1.5px solid #e94560' : '1px solid rgba(0,40,104,0.25)';
+    div.style.background = isSelected ? 'rgba(233,69,96,0.06)' : 'rgba(0,40,104,0.03)';
+    div.style.borderRadius = '2px';
+    const def = window.VISA_FIELD_DEFS&&el.type==='field' ? window.VISA_FIELD_DEFS.find(f=>f.key===el.fieldKey) : null;
+    div.textContent = el.type==='field' ? (def?def.label:el.fieldKey) : (el.content||'Text');
+  }
+
+  // Drag to move
+  edMakeDraggable(div, el);
+
+  // Tap to select
+  div.addEventListener('pointerdown', e=>{ if(e.target.classList.contains('ed-handle')) return; edSelectEl(el.id); });
+
+  // Resize handle (bottom-right)
+  if(isSelected){
+    div.style.overflow = 'visible';
+    const rh = document.createElement('div');
+    rh.className = 'ed-handle';
+    rh.style.cssText = 'position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;background:#e94560;border:2px solid #fff;border-radius:50%;cursor:nwse-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.4)';
+    rh.addEventListener('pointerdown', e=>{ e.stopPropagation(); edMakeResizable(rh, el); });
+    div.appendChild(rh);
+
+    // Delete handle (top-right)
+    const dh = document.createElement('div');
+    dh.className = 'ed-handle';
+    dh.style.cssText = 'position:absolute;right:-8px;top:-8px;width:16px;height:16px;background:#f87171;border:2px solid #fff;border-radius:50%;cursor:pointer;touch-action:none;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.4)';
+    dh.textContent = '×';
+    dh.addEventListener('pointerdown', e=>{ e.stopPropagation(); edDeleteEl(el.id); });
+    div.appendChild(dh);
+  }
+
+  return div;
+}
+
+function edMakeDraggable(div, el){
+  let drag=false, sx, sy, ox, oy;
+  div.addEventListener('pointerdown', e=>{
+    if(e.target.classList.contains('ed-handle')) return;
+    drag=true; div.setPointerCapture(e.pointerId);
+    sx=e.clientX; sy=e.clientY; ox=el.x; oy=el.y;
+    div.style.cursor='grabbing';
+  });
+  div.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    el.x = edSnap(Math.max(0, Math.min(edDocW-el.w, ox+(e.clientX-sx)/edZoom)));
+    el.y = edSnap(Math.max(0, Math.min(edDocH-el.h, oy+(e.clientY-sy)/edZoom)));
+    div.style.left = el.x+'px';
+    div.style.top = el.y+'px';
+  });
+  div.addEventListener('pointerup', ()=>{ drag=false; div.style.cursor='grab'; });
+  div.addEventListener('pointercancel', ()=>{ drag=false; });
+}
+
+function edMakeResizable(handle, el){
+  let drag=false, sx, sy, ow, oh;
+  drag=true; handle.setPointerCapture(event.pointerId);
+  sx=event.clientX; sy=event.clientY; ow=el.w; oh=el.h;
+  function onMove(e){
+    el.w = edSnap(Math.max(30, ow+(e.clientX-sx)/edZoom));
+    el.h = edSnap(Math.max(16, oh+(e.clientY-sy)/edZoom));
+    const div = document.querySelector(`[data-id="${el.id}"]`);
+    if(div){ div.style.width=el.w+'px'; div.style.minHeight=el.h+'px'; }
+  }
+  function onUp(){ document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+
+function edDeleteEl(id){
+  edElements = edElements.filter(e=>e.id!==id);
+  if(edSelected===id) edSelected=null;
+  edRender(); edShowProps();
+}
+
+function edSelectEl(id){
+  edSelected = id;
+  edRender(); edShowProps();
+}
+
+// ── Properties panel ──
+function edShowProps(){
+  const panel = document.getElementById('edPropsPanel');
+  const el = edElements.find(e=>e.id===edSelected);
+  if(!el){ panel.innerHTML='<p style="color:#555;font-size:12px;text-align:center;margin-top:20px">Select an element</p>'; return; }
+
+  const isPhoto = el.type==='photo';
+  panel.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${!isPhoto?`
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Font Size</label>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <input type="range" min="6" max="36" value="${el.fontSize||10}" style="flex:1;accent-color:#e94560" oninput="edPropChange('${el.id}','fontSize',+this.value,this.nextElementSibling)"/>
+          <span style="color:#e94560;font-size:11px;min-width:24px">${el.fontSize||10}</span>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Weight</label>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button onclick="edPropSet('${el.id}','fontWeight','normal')" style="flex:1;background:${(el.fontWeight||'normal')==='normal'?'#e94560':'#0f3460'};color:#fff;border:none;border-radius:5px;padding:5px;font-size:11px;cursor:pointer">Normal</button>
+          <button onclick="edPropSet('${el.id}','fontWeight','bold')" style="flex:1;background:${el.fontWeight==='bold'?'#e94560':'#0f3460'};color:#fff;border:none;border-radius:5px;padding:5px;font-size:11px;cursor:pointer;font-weight:700">Bold</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Align</label>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          ${['left','center','right'].map(a=>`<button onclick="edPropSet('${el.id}','align','${a}')" style="flex:1;background:${(el.align||'left')===a?'#e94560':'#0f3460'};color:#fff;border:none;border-radius:5px;padding:5px;font-size:10px;cursor:pointer">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
+        </div>
+      </div>
+      `:''}
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Color</label>
+        <input type="color" value="${el.color||'#1e1e2e'}" oninput="edPropSet('${el.id}','color',this.value)" style="width:100%;height:32px;border:none;border-radius:6px;cursor:pointer;margin-top:4px;background:transparent"/>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Position X</label>
+        <input type="number" value="${Math.round(el.x)}" oninput="edPropSet('${el.id}','x',+this.value)" style="width:100%;background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;padding:5px;font-size:12px;margin-top:4px"/>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Position Y</label>
+        <input type="number" value="${Math.round(el.y)}" oninput="edPropSet('${el.id}','y',+this.value)" style="width:100%;background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;padding:5px;font-size:12px;margin-top:4px"/>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Width</label>
+        <input type="number" value="${Math.round(el.w)}" oninput="edPropSet('${el.id}','w',+this.value)" style="width:100%;background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;padding:5px;font-size:12px;margin-top:4px"/>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Height</label>
+        <input type="number" value="${Math.round(el.h)}" oninput="edPropSet('${el.id}','h',+this.value)" style="width:100%;background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;padding:5px;font-size:12px;margin-top:4px"/>
+      </div>
+      ${el.type==='text'?`
+      <div>
+        <label style="font-size:10px;color:#888;text-transform:uppercase">Text Content</label>
+        <textarea oninput="edPropSet('${el.id}','content',this.value)" style="width:100%;background:#0f3460;color:#fff;border:1px solid #333;border-radius:5px;padding:5px;font-size:12px;margin-top:4px;resize:vertical;height:60px">${el.content||''}</textarea>
+      </div>`:''}
+      <button onclick="edDeleteEl('${el.id}')" style="width:100%;background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;margin-top:4px">🗑 Delete Element</button>
+    </div>
+  `;
+}
+
+window.edPropChange = function(id, key, val, label){
+  const el = edElements.find(e=>e.id===id); if(!el) return;
+  el[key] = val; if(label) label.textContent=val;
+  const div = document.querySelector(`[data-id="${id}"]`);
+  if(div){
+    if(key==='fontSize') div.style.fontSize=val+'px';
+    if(key==='color') div.style.color=val;
+  }
+};
+
+window.edPropSet = function(id, key, val){
+  const el = edElements.find(e=>e.id===id); if(!el) return;
+  el[key] = val;
+  edRender(); edShowProps();
+};
+
+// ── Layers list ──
+function edUpdateLayers(){
+  const list = document.getElementById('edLayersList');
+  list.innerHTML = '';
+  [...edElements].reverse().forEach(el=>{
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:5px;cursor:pointer;background:${el.id===edSelected?'#e9456022':'transparent'};border:1px solid ${el.id===edSelected?'#e94560':'transparent'}`;
+    const icon = el.type==='photo'?'🖼':el.type==='field'?'📋':'✏️';
+    const name = el.type==='photo'?'Photo':el.type==='field'?(el.label||el.fieldKey):(el.content||'Text');
+    row.innerHTML = `<span style="font-size:11px">${icon}</span><span style="font-size:11px;color:#ccc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>`;
+    row.onclick = ()=>{ edSelectEl(el.id); };
+    list.appendChild(row);
+  });
+}
+
+// ── Keep old layout editor modal working (for backward compat) ──
+window.openLayoutEditor = window.openDocEditor;
+window.closeLayoutEditor = window.closeDocEditor;
+window.resetLayout = function(){
+  edElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS||[]));
+  edSelected=null; edBgUrl=null; edBgRawSrc=null; edBgOpacity=1;
+  edDocW=540; edDocH=520;
+  edRender(); edApplyBg(); edShowProps();
+};
+window.saveLayout = window.saveDocEditor;
 
 window.updateStatus = async function(newReviewStatus, deliveryAddress){
   const msg = document.getElementById('updateMsg');

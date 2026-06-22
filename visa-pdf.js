@@ -157,8 +157,10 @@ function renderTextLikeElement(docPdf, el, d){
   docPdf.text(text, el.x, el.y);
 }
 
-window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, backgroundOpacity){
+window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, backgroundOpacity, visaBoxW, visaBoxH){
   const elements = (elementsOverride && elementsOverride.length) ? elementsOverride : window.DEFAULT_VISA_ELEMENTS;
+  const bw = typeof visaBoxW==='number' ? visaBoxW : 540;
+  const bh = typeof visaBoxH==='number' ? visaBoxH : 520;
   const { jsPDF } = window.jspdf;
   const docPdf = new jsPDF({ unit:'pt', format:'letter' });
   const pageWidth = docPdf.internal.pageSize.getWidth();
@@ -213,9 +215,8 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
 
   docPdf.setDrawColor(0,40,104);
   docPdf.setLineWidth(1.5);
-  docPdf.rect(36, 40, pageWidth-72, 520);
+  docPdf.rect(36, 40, bw, bh);
 
-  // Background image — rendered inside the border at the admin-chosen opacity
   if(backgroundUrl){
     try{
       const bgData = await loadImageAsDataURL(backgroundUrl);
@@ -224,13 +225,13 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
         try{
           docPdf.saveGraphicsState();
           docPdf.setGState(new docPdf.GState({opacity: safeOpacity}));
-          docPdf.addImage(bgData, 'JPEG', 36, 40, pageWidth-72, 520, undefined, 'FAST');
+          docPdf.addImage(bgData, 'JPEG', 36, 40, bw, bh, undefined, 'FAST');
           docPdf.restoreGraphicsState();
         } catch(e){
-          docPdf.addImage(bgData, 'JPEG', 36, 40, pageWidth-72, 520, undefined, 'FAST');
+          docPdf.addImage(bgData, 'JPEG', 36, 40, bw, bh, undefined, 'FAST');
         }
       }
-    } catch(e){ /* skip background if it fails — never block PDF */ }
+    } catch(e){}
   }
 
   docPdf.setFont('helvetica','bold');
