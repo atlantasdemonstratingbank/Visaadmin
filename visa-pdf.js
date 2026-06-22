@@ -1,4 +1,14 @@
-
+// ============================================================
+// visa-pdf.js — Generates a 2-page "Visa Approval" PDF
+// SANDBOX / DEMO DOCUMENT — see disclaimers baked into every page.
+// Uses jsPDF (loaded via CDN by the page that includes this file).
+//
+// Page 2 is built from a flexible array of admin-placed "elements"
+// (fields bound to applicant data, or free custom text, or the photo).
+// The watermark, header banner, and disclaimer box are NOT part of
+// that editable array — they always render on top, fixed, regardless
+// of what elements are placed underneath.
+// ============================================================
 
 async function loadImageAsDataURL(url){
   try{
@@ -18,7 +28,7 @@ function tileWatermark(docPdf, text){
   const pageHeight = docPdf.internal.pageSize.getHeight();
   docPdf.setFont('helvetica','bold');
   docPdf.setFontSize(13);
-  docPdf.setTextColor(185,185,185); 
+  docPdf.setTextColor(185,185,185); // light gray — visible but doesn't block underlying content
   const stepX = 210, stepY = 95;
   for(let y = 50; y < pageHeight + 40; y += stepY){
     for(let x = -80; x < pageWidth + 80; x += stepX){
@@ -54,6 +64,9 @@ function headerBanner(docPdf){
   docPdf.text('SANDBOX CONTEST PROJECT — NOT AN OFFICIAL U.S. GOVERNMENT DOCUMENT', pageWidth/2, 14, {align:'center'});
 }
 
+// Fields admin can bind a placed element to. Values are pulled live from
+// the applicant's data at PDF-generation time, so one saved layout works
+// for every applicant.
 window.VISA_FIELD_DEFS = [
   {key:'firstName', label:'First Name'},
   {key:'lastName', label:'Last Name'},
@@ -89,6 +102,7 @@ function getFieldValue(d, key){
   }
 }
 
+// Default page-2 layout if admin hasn't customized one yet in the Layout Editor.
 window.DEFAULT_VISA_ELEMENTS = [
   { id:'el_photo', type:'photo', x:60,  y:130, w:110, h:130 },
   { id:'el_1', type:'field', fieldKey:'fullName',     x:190, y:145, fontSize:10 },
@@ -108,7 +122,7 @@ async function renderPhotoElement(docPdf, el, d){
   docPdf.setDrawColor(0,40,104);
   docPdf.setLineWidth(1);
   docPdf.rect(el.x, el.y, el.w, el.h);
-  
+  // Manually-uploaded admin photo takes priority over the applicant's biometric capture
   const photoUrl = d.manualPhotoUrl || (d.biometricPhotos && d.biometricPhotos.front);
   if(photoUrl){
     const dataUrl = await loadImageAsDataURL(photoUrl);
@@ -143,29 +157,13 @@ function renderTextLikeElement(docPdf, el, d){
   docPdf.text(text, el.x, el.y);
 }
 
-async function renderBackgroundImage(docPdf, url, rect, opacity){
-  const dataUrl = await loadImageAsDataURL(url);
-  if(!dataUrl) return;
-  const safeOpacity = Math.max(0.1, Math.min(0.7, typeof opacity === 'number' ? opacity : 0.32));
-  try{
-    let usedGState = false;
-    try{
-      docPdf.saveGraphicsState();
-      docPdf.setGState(new docPdf.GState({opacity:safeOpacity}));
-      usedGState = true;
-    } catch(e){  }
-    docPdf.addImage(dataUrl, 'JPEG', rect.x, rect.y, rect.w, rect.h, undefined, 'FAST');
-    if(usedGState) docPdf.restoreGraphicsState();
-  } catch(e){  }
-}
-
 window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, backgroundOpacity){
   const elements = (elementsOverride && elementsOverride.length) ? elementsOverride : window.DEFAULT_VISA_ELEMENTS;
   const { jsPDF } = window.jspdf;
   const docPdf = new jsPDF({ unit:'pt', format:'letter' });
   const pageWidth = docPdf.internal.pageSize.getWidth();
 
-  
+  // ===== PAGE 1: Approval cover letter =====
   headerBanner(docPdf);
   docPdf.setFont('helvetica','bold');
   docPdf.setFontSize(20);
@@ -209,20 +207,30 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
   tileWatermark(docPdf, 'SANDBOX — NOT FOR REAL USE');
   disclaimerBlock(docPdf, docPdf.internal.pageSize.getHeight()-90);
 
-  
+  // ===== PAGE 2: admin-customizable details page =====
   docPdf.addPage();
   headerBanner(docPdf);
 
-  
-  
-  
-  
   docPdf.setDrawColor(0,40,104);
   docPdf.setLineWidth(1.5);
   docPdf.rect(36, 40, pageWidth-72, 520);
 
+  // Background image — rendered inside the border at the admin-chosen opacity
   if(backgroundUrl){
-    await renderBackgroundImage(docPdf, backgroundUrl, { x:36, y:40, w:pageWidth-72, h:520 }, backgroundOpacity);
+    try{
+      const bgData = await loadImageAsDataURL(backgroundUrl);
+      if(bgData){
+        const safeOpacity = Math.max(0.1, Math.min(1, typeof backgroundOpacity==='number' ? backgroundOpacity : 0.32));
+        try{
+          docPdf.saveGraphicsState();
+          docPdf.setGState(new docPdf.GState({opacity: safeOpacity}));
+          docPdf.addImage(bgData, 'JPEG', 36, 40, pageWidth-72, 520, undefined, 'FAST');
+          docPdf.restoreGraphicsState();
+        } catch(e){
+          docPdf.addImage(bgData, 'JPEG', 36, 40, pageWidth-72, 520, undefined, 'FAST');
+        }
+      }
+    } catch(e){ /* skip background if it fails — never block PDF */ }
   }
 
   docPdf.setFont('helvetica','bold');
@@ -237,20 +245,16 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
   docPdf.setTextColor(60,60,70);
   docPdf.text('Nonimmigrant Visa', pageWidth/2, 110, {align:'center'});
 
-  
   for(const el of elements){
     if(el.type === 'photo') await renderPhotoElement(docPdf, el, d);
     else renderTextLikeElement(docPdf, el, d);
   }
 
-  
   docPdf.setFont('helvetica','italic');
   docPdf.setFontSize(8.5);
   docPdf.setTextColor(90,100,128);
   docPdf.text('Annotation: Issued for demonstration purposes as part of a student web development contest submission.', 60, 500, {maxWidth: pageWidth-160});
 
-  
-  
   tileWatermark(docPdf, 'SANDBOX — NOT FOR REAL USE');
   disclaimerBlock(docPdf, 580);
 
