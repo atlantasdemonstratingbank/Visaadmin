@@ -248,6 +248,58 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   if(btn){ btn.disabled = false; btn.textContent = '📄 Download Visa Document (PDF)'; }
 };
 
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, doc, updateDoc, getDoc, setDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB = {apiKey:"AIzaSyAQbiR_7vvcUlr0nr3NKQ2csjh-iwe0rhY",authDomain:"visa-3504e.firebaseapp.com",projectId:"visa-3504e",storageBucket:"visa-3504e.firebasestorage.app",messagingSenderId:"618621727677",appId:"1:618621727677:web:72dccc703c97a5c739d8d4"};
+const app = initializeApp(FB);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const CLOUDINARY = {cloud_name:'dbgxllxdb', upload_preset:'efootball_screenshots'};
+const ADMIN_EMAILS = ['viccylay30@gmail.com'];
+
+let allApps = [];
+let currentDetailRef = null;
+
+window.doLogin = async function(){
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.style.display='none';
+  if(!email || !pass) return;
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    err.textContent = 'Invalid credentials. Please try again.';
+    err.style.display='block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+};
+
+window.doLogout = function(){ signOut(auth); };
+
+onAuthStateChanged(auth, (user)=>{
+  if(user && ADMIN_EMAILS.includes(user.email)){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadApplications();
+  } else if(user){
+    document.getElementById('loginErr').textContent = 'This account is not authorized for admin access.';
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('loginBtn').disabled=false;
+    document.getElementById('loginBtn').textContent='Sign In';
+    signOut(auth);
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('dashboard').style.display='none';
+  }
+});
+
 window.uploadManualPhoto = async function(input){
   const file = input.files[0];
   if(!file) return;
