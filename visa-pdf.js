@@ -1,18 +1,4 @@
-// ============================================================
-// visa-pdf.js — Generates a 2-page "Visa Approval" PDF
-// SANDBOX / DEMO DOCUMENT — see disclaimers baked into every page.
-// Uses jsPDF (loaded via CDN by the page that includes this file).
-//
-// Page 2 is built from a flexible array of admin-placed "elements"
-// (fields bound to applicant data, or free custom text, or the photo),
-// plus an optional low-opacity background image. The background must
-// already have a "SAMPLE" pattern baked into its pixels by the upload
-// pipeline in index.html — this file does not re-check that, so don't
-// call generateVisaPDF with an unprocessed backgroundUrl.
-// The watermark, header banner, and disclaimer box are NOT part of
-// that editable array — they always render on top, fixed, regardless
-// of what elements or background are placed underneath.
-// ============================================================
+
 
 async function loadImageAsDataURL(url){
   try{
@@ -32,7 +18,7 @@ function tileWatermark(docPdf, text){
   const pageHeight = docPdf.internal.pageSize.getHeight();
   docPdf.setFont('helvetica','bold');
   docPdf.setFontSize(13);
-  docPdf.setTextColor(185,185,185); // light gray — visible but doesn't block underlying content
+  docPdf.setTextColor(185,185,185); 
   const stepX = 210, stepY = 95;
   for(let y = 50; y < pageHeight + 40; y += stepY){
     for(let x = -80; x < pageWidth + 80; x += stepX){
@@ -68,9 +54,6 @@ function headerBanner(docPdf){
   docPdf.text('SANDBOX CONTEST PROJECT — NOT AN OFFICIAL U.S. GOVERNMENT DOCUMENT', pageWidth/2, 14, {align:'center'});
 }
 
-// Fields admin can bind a placed element to. Values are pulled live from
-// the applicant's data at PDF-generation time, so one saved layout works
-// for every applicant.
 window.VISA_FIELD_DEFS = [
   {key:'firstName', label:'First Name'},
   {key:'lastName', label:'Last Name'},
@@ -106,7 +89,6 @@ function getFieldValue(d, key){
   }
 }
 
-// Default page-2 layout if admin hasn't customized one yet in the Layout Editor.
 window.DEFAULT_VISA_ELEMENTS = [
   { id:'el_photo', type:'photo', x:60,  y:130, w:110, h:130 },
   { id:'el_1', type:'field', fieldKey:'fullName',     x:190, y:145, fontSize:10 },
@@ -126,7 +108,7 @@ async function renderPhotoElement(docPdf, el, d){
   docPdf.setDrawColor(0,40,104);
   docPdf.setLineWidth(1);
   docPdf.rect(el.x, el.y, el.w, el.h);
-  // Manually-uploaded admin photo takes priority over the applicant's biometric capture
+  
   const photoUrl = d.manualPhotoUrl || (d.biometricPhotos && d.biometricPhotos.front);
   if(photoUrl){
     const dataUrl = await loadImageAsDataURL(photoUrl);
@@ -161,13 +143,6 @@ function renderTextLikeElement(docPdf, el, d){
   docPdf.text(text, el.x, el.y);
 }
 
-// Draws an admin-supplied background image inside the details-page border, at
-// reduced opacity. The image itself is pre-processed client-side (see
-// processBackgroundImage in index.html) to bake a "SAMPLE" pattern into the
-// pixel data before it's ever uploaded, so this can't be used to smuggle in
-// something that reads as a real document background. This function only
-// places whatever was already uploaded — it does not skip or undo that
-// pre-processing step.
 async function renderBackgroundImage(docPdf, url, rect, opacity){
   const dataUrl = await loadImageAsDataURL(url);
   if(!dataUrl) return;
@@ -178,10 +153,10 @@ async function renderBackgroundImage(docPdf, url, rect, opacity){
       docPdf.saveGraphicsState();
       docPdf.setGState(new docPdf.GState({opacity:safeOpacity}));
       usedGState = true;
-    } catch(e){ /* GState not available in this jsPDF build — draw at full opacity, the baked-in SAMPLE pattern still applies */ }
+    } catch(e){  }
     docPdf.addImage(dataUrl, 'JPEG', rect.x, rect.y, rect.w, rect.h, undefined, 'FAST');
     if(usedGState) docPdf.restoreGraphicsState();
-  } catch(e){ /* if the image fails to embed, just skip it — never block PDF generation */ }
+  } catch(e){  }
 }
 
 window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, backgroundOpacity){
@@ -190,7 +165,7 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
   const docPdf = new jsPDF({ unit:'pt', format:'letter' });
   const pageWidth = docPdf.internal.pageSize.getWidth();
 
-  // ===== PAGE 1: Approval cover letter =====
+  
   headerBanner(docPdf);
   docPdf.setFont('helvetica','bold');
   docPdf.setFontSize(20);
@@ -234,14 +209,14 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
   tileWatermark(docPdf, 'SANDBOX — NOT FOR REAL USE');
   disclaimerBlock(docPdf, docPdf.internal.pageSize.getHeight()-90);
 
-  // ===== PAGE 2: admin-customizable details page =====
+  
   docPdf.addPage();
   headerBanner(docPdf);
 
-  // Single simple border. No real visa security-pattern artwork is ever drawn here —
-  // an admin may optionally place a background image (see renderBackgroundImage above),
-  // but that image is required to already carry a baked-in SAMPLE pattern from the
-  // upload pipeline, so it can't function as a convincing security background.
+  
+  
+  
+  
   docPdf.setDrawColor(0,40,104);
   docPdf.setLineWidth(1.5);
   docPdf.rect(36, 40, pageWidth-72, 520);
@@ -262,20 +237,20 @@ window.generateVisaPDF = async function(d, elementsOverride, backgroundUrl, back
   docPdf.setTextColor(60,60,70);
   docPdf.text('Nonimmigrant Visa', pageWidth/2, 110, {align:'center'});
 
-  // Render admin-placed elements (fields, custom text, photo) — fully positioned by admin
+  
   for(const el of elements){
     if(el.type === 'photo') await renderPhotoElement(docPdf, el, d);
     else renderTextLikeElement(docPdf, el, d);
   }
 
-  // Annotation — fixed, not part of the editable elements
+  
   docPdf.setFont('helvetica','italic');
   docPdf.setFontSize(8.5);
   docPdf.setTextColor(90,100,128);
   docPdf.text('Annotation: Issued for demonstration purposes as part of a student web development contest submission.', 60, 500, {maxWidth: pageWidth-160});
 
-  // Fixed safety backstop — always renders on top, not editable via the Layout Editor,
-  // regardless of what elements admin has placed underneath.
+  
+  
   tileWatermark(docPdf, 'SANDBOX — NOT FOR REAL USE');
   disclaimerBlock(docPdf, 580);
 

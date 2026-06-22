@@ -10,7 +10,6 @@
 :root{--blue:#002868;--blue2:#003a99;--red:#BF0A30;--gold:#C9A84C;--white:#fff;--offwhite:#F0F4FA;--text:#1A1A2E;--muted:#5a6480;--border:#d0d8e8;--green:#1a6b3a;--amber:#9a6b00;--dark:#0d1a35;--serif:'Source Serif 4',Georgia,serif;--sans:'Inter',system-ui,sans-serif;--mono:'Roboto Mono',monospace;--radius:6px;--shadow:0 2px 16px rgba(0,40,104,.10)}
 body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-height:100vh}
 
-/* ===== LOGIN ===== */
 #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blue),#001a52,#0a0a2a);padding:20px}
 .login-card{background:#fff;border-radius:12px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .login-seal{text-align:center;margin-bottom:20px}
@@ -25,7 +24,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 .login-btn:disabled{background:#ccc;cursor:not-allowed}
 .login-err{color:var(--red);font-size:13px;text-align:center;margin-top:14px;display:none}
 
-/* ===== DASHBOARD ===== */
 #dashboard{display:none}
 .admin-nav{background:var(--dark);color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
 .admin-brand{display:flex;align-items:center;gap:10px}
@@ -63,7 +61,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 .status-denied{background:#ffd4d4;color:var(--red)}
 .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
 
-/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
 .modal{background:#fff;border-radius:10px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -96,17 +93,25 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 .action-btn.review:hover{background:#a0440a;color:#fff}
 .update-msg{font-size:12px;margin-top:10px;display:none}
 
-/* LAYOUT EDITOR */
 .layout-preview-wrap{display:flex;justify-content:center;padding:10px 0}
 .layout-preview{position:relative;width:306px;height:396px;background:#fff;border:1.5px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08);overflow:hidden;touch-action:none}
 .layout-preview .bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;pointer-events:none}
 .layout-preview .page-border{position:absolute;border:1px solid #002868;pointer-events:none}
 .layout-preview .header-strip{position:absolute;top:0;left:0;right:0;height:11px;background:#BF0A30;pointer-events:none}
 .layout-preview .title-hint{position:absolute;top:30px;left:0;right:0;text-align:center;font-size:8px;color:#002868;font-weight:700;pointer-events:none}
-.layout-el{position:absolute;font-size:8px;color:#1E1E2E;background:rgba(0,40,104,.06);border:1px solid rgba(0,40,104,.35);border-radius:2px;padding:1px 3px;white-space:nowrap;cursor:grab;user-select:none}
+.layout-el{position:absolute;font-size:8px;color:#1E1E2E;background:rgba(0,40,104,.06);border:1px solid rgba(0,40,104,.35);border-radius:2px;padding:1px 3px;white-space:nowrap;cursor:grab;user-select:none;touch-action:none}
 .layout-el.selected{border:1.5px solid #BF0A30;background:rgba(191,10,48,.08)}
 .layout-el:active{cursor:grabbing}
 .layout-el.photo-el{display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#002868;background:rgba(0,40,104,.08);border:1.5px dashed #002868}
+.resize-handle{position:absolute;right:-8px;bottom:-8px;width:15px;height:15px;background:#002868;border:2px solid #fff;border-radius:50%;cursor:nwse-resize;touch-action:none;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.crop-wrap{position:relative;width:100%;max-width:306px;margin:10px auto 0;overflow:hidden;background:#000;border-radius:6px;touch-action:none;line-height:0}
+.crop-wrap img{display:block;width:100%;height:auto;user-select:none;pointer-events:none}
+.crop-box{position:absolute;border:2px solid #BF0A30;box-shadow:0 0 0 9999px rgba(0,0,0,.5);cursor:move;touch-action:none}
+.crop-handle{position:absolute;width:17px;height:17px;background:#BF0A30;border:2px solid #fff;border-radius:50%;touch-action:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.crop-handle[data-h="nw"]{left:-9px;top:-9px;cursor:nwse-resize}
+.crop-handle[data-h="ne"]{right:-9px;top:-9px;cursor:nesw-resize}
+.crop-handle[data-h="sw"]{left:-9px;bottom:-9px;cursor:nesw-resize}
+.crop-handle[data-h="se"]{right:-9px;bottom:-9px;cursor:nwse-resize}
 .layout-controls{display:flex;gap:8px;justify-content:center;margin-top:14px}
 .layout-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
 .field-palette{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
@@ -116,7 +121,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
 </head>
 <body>
 
-<!-- ===== LOGIN SCREEN ===== -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-seal">
@@ -137,7 +141,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   </div>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
 <div id="dashboard">
   <div class="admin-nav">
     <div class="admin-brand"><strong>U.S. Visa Portal</strong><span>ADMIN</span></div>
@@ -174,7 +177,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   </div>
 </div>
 
-<!-- ===== MODAL ===== -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -188,7 +190,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   </div>
 </div>
 
-<!-- ===== PRICING MODAL ===== -->
 <div class="modal-overlay" id="pricingOverlay">
   <div class="modal" style="max-width:480px">
     <div class="modal-head">
@@ -215,7 +216,6 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
   </div>
 </div>
 
-<!-- ===== LAYOUT EDITOR MODAL ===== -->
 <div class="modal-overlay" id="layoutOverlay">
   <div class="modal" style="max-width:440px">
     <div class="modal-head">
@@ -230,286 +230,17 @@ body{font-family:var(--sans);color:var(--text);background:var(--offwhite);min-he
         <div class="layout-preview" id="layoutPreview">
           <div class="bg-layer" id="layoutBgLayer"></div>
           <div class="header-strip"></div>
-          <div class="title-hint">usa</div>
+          <div class="title-hint">SANDBOX — NOT REAL</div>
           <div class="page-border" id="pageBorderGuide"></div>
-          <!-- Draggable elements injected here by JS -->
+          
         </div>
       </div>
       <p class="layout-hint">Tap an element on the canvas to select it, then use Delete Selected to remove it. The watermark and disclaimers always render on top and aren't editable here.</p>
 
       <div class="layout-controls" style="flex-wrap:wrap;margin-top:4px">
         <label class="action-btn" style="cursor:pointer;display:inline-flex;align-items:center">
-          🖼️ Upload Background Image
-          <input type="file" accept="image/*" style="display:none" onchange="uploadLayoutBackground(this)"/>
-        </label>
-        <button class="action-btn" id="removeBgBtn" onclick="removeLayoutBackground()" style="display:none">Remove Background</button>
-      </div>
-      <div id="bgOpacityRow" style="display:none;align-items:center;gap:8px;margin-top:8px">
-        <label for="bgOpacitySlider" style="font-size:11px;color:var(--muted);white-space:nowrap">Background opacity</label>
-        <input type="range" id="bgOpacitySlider" min="10" max="100" step="5" value="32" style="flex:1" oninput="onBackgroundOpacityInput(this.value)"/>
-        <span id="bgOpacityValue" style="font-size:11px;color:var(--muted);width:34px;text-align:right">32%</span>
-      </div>
-      <p class="layout-hint" style="margin-top:2px">Any image you upload is automatically shrunk, faded, and stamped with a repeating "usa" pattern before it's used — this can't be turned off, so the result can never pass as a real visa background. The opacity slider only controls how visible that already-watermarked image is (capped at 70% so it stays a background, not the document).</p>
-
-      <div class="field-palette" id="fieldPalette"></div>
-
-      <div class="layout-controls" style="flex-wrap:wrap">
-        <button class="action-btn" id="customTextBtn" onclick="addCustomTextElement()">+ Custom Text</button>
-        <button class="action-btn" id="deleteSelBtn" onclick="deleteSelectedElement()" disabled>Delete Selected</button>
-        <button class="action-btn" onclick="resetLayout()">Reset to Default</button>
-        <button class="action-btn approve" onclick="saveLayout()">Save Layout</button>
-      </div>
-      <p class="update-msg" id="layoutMsg"></p>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, getDocs, doc, updateDoc, getDoc, setDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const FB = {apiKey:"AIzaSyAQbiR_7vvcUlr0nr3NKQ2csjh-iwe0rhY",authDomain:"visa-3504e.firebaseapp.com",projectId:"visa-3504e",storageBucket:"visa-3504e.firebasestorage.app",messagingSenderId:"618621727677",appId:"1:618621727677:web:72dccc703c97a5c739d8d4"};
-const app = initializeApp(FB);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const CLOUDINARY = {cloud_name:'dbgxllxdb', upload_preset:'efootball_screenshots'};
-
-// ⚠️ Restrict dashboard access to these admin emails (also enforce via Firestore security rules)
-const ADMIN_EMAILS = ['viccylay30@gmail.com'];
-
-let allApps = [];
-let currentDetailRef = null;
-
-window.doLogin = async function(){
-  const email = document.getElementById('adminEmail').value.trim();
-  const pass = document.getElementById('adminPass').value;
-  const btn = document.getElementById('loginBtn');
-  const err = document.getElementById('loginErr');
-  err.style.display='none';
-  if(!email || !pass) return;
-  btn.disabled = true; btn.textContent = 'Signing in...';
-  try{
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e){
-    err.textContent = 'Invalid credentials. Please try again.';
-    err.style.display='block';
-    btn.disabled = false; btn.textContent = 'Sign In';
-  }
-};
-
-window.doLogout = function(){ signOut(auth); };
-
-onAuthStateChanged(auth, (user)=>{
-  if(user && ADMIN_EMAILS.includes(user.email)){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('dashboard').style.display='block';
-    loadApplications();
-  } else if(user){
-    // Logged in but not authorized
-    document.getElementById('loginErr').textContent = 'This account is not authorized for admin access.';
-    document.getElementById('loginErr').style.display='block';
-    document.getElementById('loginBtn').disabled=false;
-    document.getElementById('loginBtn').textContent='Sign In';
-    signOut(auth);
-  } else {
-    document.getElementById('loginScreen').style.display='flex';
-    document.getElementById('dashboard').style.display='none';
-  }
-});
-
-async function loadApplications(){
-  try{
-    const q = query(collection(db,'visa_applications'), orderBy('createdAt','desc'));
-    const snap = await getDocs(q);
-    allApps = [];
-    snap.forEach(d=> allApps.push(d.data()));
-  } catch(e){
-    // Fallback without orderBy in case createdAt missing on some docs
-    const snap = await getDocs(collection(db,'visa_applications'));
-    allApps = [];
-    snap.forEach(d=> allApps.push(d.data()));
-  }
-  renderStats();
-  renderTable();
-}
-
-// Combines feePaid + biometricScheduled + admin reviewStatus into one state,
-// matching the same logic used on the applicant-facing status.html page.
-function computeCombinedStatus(a){
-  const paid = !!a.feePaid;
-  const bio = !!a.biometricScheduled;
-  if(!paid && !bio) return 'pending_both';
-  if(paid && !bio) return 'paid_pending_bio';
-  if(!paid && bio) return 'bio_pending_paid';
-  const review = a.reviewStatus || 'pending';
-  if(review==='approved') return 'approved';
-  if(review==='denied') return 'denied';
-  return 'under_review';
-}
-
-const STATUS_BADGE_CLASS = {
-  pending_both:'status-pending_payment',
-  paid_pending_bio:'status-payment_received',
-  bio_pending_paid:'status-biometric_scheduled',
-  under_review:'status-under_review',
-  approved:'status-approved',
-  denied:'status-denied'
-};
-
-function renderStats(){
-  const counts = {pending_both:0,paid_pending_bio:0,bio_pending_paid:0,under_review:0,approved:0,denied:0};
-  allApps.forEach(a=>{ const c = computeCombinedStatus(a); if(counts[c]!==undefined) counts[c]++; });
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${allApps.length}</div><div class="stat-label">Total Applications</div></div>
-    <div class="stat-card pending"><div class="stat-num">${counts.pending_both}</div><div class="stat-label">Pending Payment & Biometric</div></div>
-    <div class="stat-card review"><div class="stat-num">${counts.paid_pending_bio+counts.bio_pending_paid+counts.under_review}</div><div class="stat-label">In Process</div></div>
-    <div class="stat-card approved"><div class="stat-num">${counts.approved}</div><div class="stat-label">Approved</div></div>
-    <div class="stat-card denied"><div class="stat-num">${counts.denied}</div><div class="stat-label">Denied</div></div>
-  `;
-}
-
-const STATUS_LABELS = {
-  pending_both:'Pending Payment & Biometric', paid_pending_bio:'Payment Received — Biometric Pending',
-  bio_pending_paid:'Biometric Done — Payment Pending', under_review:'Under Review',
-  approved:'Approved', denied:'Denied'
-};
-
-window.renderTable = function(){
-  const search = document.getElementById('searchBox').value.toLowerCase();
-  const filter = document.getElementById('statusFilter').value;
-  let rows = allApps.filter(a=>{
-    const matchesSearch = !search || (a.fullName||'').toLowerCase().includes(search) || (a.email||'').toLowerCase().includes(search) || (a.ref||'').toLowerCase().includes(search);
-    const matchesFilter = !filter || computeCombinedStatus(a) === filter;
-    return matchesSearch && matchesFilter;
-  });
-  const tbody = document.getElementById('tableBody');
-  document.getElementById('emptyState').style.display = rows.length? 'none':'block';
-  tbody.innerHTML = rows.map(a=>{
-    const combined = computeCombinedStatus(a);
-    return `
-    <tr onclick="openModal('${a.ref}')">
-      <td class="ref-cell">${a.ref}</td>
-      <td>${a.fullName||'—'}</td>
-      <td>${a.visaType||'—'}</td>
-      <td>${a.createdAt? new Date(a.createdAt.seconds*1000).toLocaleDateString() : '—'}</td>
-      <td><span class="status-pill ${STATUS_BADGE_CLASS[combined]}">${STATUS_LABELS[combined]}</span></td>
-    </tr>
-  `;}).join('');
-};
-
-window.openModal = function(ref){
-  const a = allApps.find(x=>x.ref===ref);
-  if(!a) return;
-  currentDetailRef = ref;
-  document.getElementById('modalName').textContent = a.fullName||'Applicant';
-  document.getElementById('modalRef').textContent = a.ref;
-
-  const docs = a.documents || {};
-  const docHtml = Object.keys(docs).length
-    ? `<div class="doc-grid">${Object.entries(docs).map(([k,v])=>`<a href="${v}" target="_blank" class="doc-link">📄 ${k.replace('_',' ')}</a>`).join('')}</div>`
-    : '<p style="font-size:13px;color:var(--muted)">No documents uploaded yet.</p>';
-
-  const bioPhotos = a.biometricPhotos || {};
-  const bioLabels = {front:'Front', right:'Turn Right', left:'Turn Left', blink:'Blink'};
-  const bioHtml = Object.keys(bioPhotos).length
-    ? `<div class="bio-photo-grid">${Object.entries(bioPhotos).map(([k,v])=>`
-        <a href="${v}" target="_blank" class="bio-photo-card">
-          <img src="${v}" loading="lazy"/>
-          <span>${bioLabels[k]||k}</span>
-        </a>`).join('')}</div>`
-    : '<p style="font-size:13px;color:var(--muted)">No biometric capture submitted yet.</p>';
-
-  document.getElementById('modalBody').innerHTML = `
-    <div class="detail-section">
-      <h4>Applicant Information</h4>
-      <div class="detail-grid">
-        <div class="detail-item"><div class="dl">Email</div><div class="dv">${a.email||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Date of Birth</div><div class="dv">${a.dob||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Citizenship</div><div class="dv">${a.citizenship||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Occupation</div><div class="dv">${a.occupation||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Passport No.</div><div class="dv">${a.passportNum||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Passport Expiry</div><div class="dv">${a.passportExpiry||'—'}</div></div>
-      </div>
-    </div>
-    <div class="detail-section">
-      <h4>Travel Details</h4>
-      <div class="detail-grid">
-        <div class="detail-item"><div class="dl">Visa Type</div><div class="dv">${a.visaType||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Purpose</div><div class="dv">${a.purpose||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Arrival</div><div class="dv">${a.arrivalDate||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Departure</div><div class="dv">${a.departureDate||'—'}</div></div>
-      </div>
-    </div>
-    <div class="detail-section">
-      <h4>Payment & Biometric</h4>
-      <div class="detail-grid">
-        <div class="detail-item"><div class="dl">Fee Paid</div><div class="dv">${a.feePaid?'✅ Yes':'❌ No'}</div></div>
-        <div class="detail-item"><div class="dl">Payment Ref</div><div class="dv">${a.paymentRef||'—'}</div></div>
-        <div class="detail-item"><div class="dl">Biometric Location</div><div class="dv">${a.biometricLocation||'Not scheduled'}</div></div>
-        <div class="detail-item"><div class="dl">Biometric Date</div><div class="dv">${a.biometricDate||'—'} ${a.biometricTime||''}</div></div>
-      </div>
-      ${!a.feePaid ? `<button class="action-btn approve" style="margin-top:14px" onclick="markAsPaid()">💲 Mark as Paid (Manual)</button>` : ''}
-      ${computeCombinedStatus(a)==='approved' ? `<button class="action-btn approve" style="margin-top:10px" id="adminDownloadVisaBtn" onclick="downloadVisaAdmin()">📄 Download Visa Document (PDF)</button>` : ''}
-    </div>
-    <div class="detail-section">
-      <h4>Biometric Capture</h4>
-      ${bioHtml}
-    </div>
-    <div class="detail-section">
-      <h4>Visa Photo Override</h4>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">By default the visa PDF uses the applicant's biometric capture photo. Upload a photo here to use instead — useful if biometric capture wasn't done or wasn't usable.</p>
-      ${a.manualPhotoUrl ? `<img src="${a.manualPhotoUrl}" style="width:90px;height:106px;object-fit:cover;border-radius:6px;border:1px solid var(--border);margin-bottom:10px;display:block"/>` : ''}
-      <label style="background:var(--blue);color:#fff;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;display:inline-block">
-        ${a.manualPhotoUrl ? 'Replace Photo' : 'Upload Photo'} <input type="file" accept="image/*" style="display:none" onchange="uploadManualPhoto(this)"/>
-      </label>
-      ${a.manualPhotoUrl ? ` <button class="action-btn" style="margin-left:8px" onclick="clearManualPhoto()">Remove Override</button>` : ''}
-      <p class="update-msg" id="manualPhotoMsg"></p>
-    </div>
-    <div class="detail-section">
-      <h4>Uploaded Documents</h4>
-      ${docHtml}
-    </div>
-    <div class="detail-section">
-      <h4>Update Application Status</h4>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Note: the applicant only sees Under Review / Approved / Denied once <em>both</em> payment and biometric capture are complete. Until then, they'll see a pending-payment or pending-biometric message instead.</p>
-      <div class="status-actions">
-        <button class="action-btn review" onclick="updateStatus('under_review')">Mark Under Review</button>
-        <button class="action-btn approve" onclick="showApproveForm()">Approve Visa</button>
-        <button class="action-btn deny" onclick="updateStatus('denied')">Deny Visa</button>
-      </div>
-      <div id="approveForm" style="display:none;margin-top:14px;padding:14px;background:var(--offwhite);border-radius:8px">
-        <label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Delivery Address for Approved Visa/Passport</label>
-        <textarea id="deliveryAddressInput" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit" placeholder="Full address where the visa/passport should be delivered">${a.deliveryAddress||''}</textarea>
-        <button class="action-btn approve" style="margin-top:10px" onclick="confirmApprove()">Confirm Approval</button>
-      </div>
-      <p class="update-msg" id="updateMsg"></p>
-    </div>
-  `;
-  document.getElementById('modalOverlay').classList.add('open');
-};
-
-window.closeModal = function(){ document.getElementById('modalOverlay').classList.remove('open'); };
-
-window.downloadVisaAdmin = async function(){
-  const a = allApps.find(x=>x.ref===currentDetailRef);
-  if(!a) return;
-  const btn = document.getElementById('adminDownloadVisaBtn');
-  if(btn){ btn.disabled = true; btn.textContent = '...'; }
-  try{
-    let elements = null;
-    let backgroundUrl = null;
-    let backgroundOpacity = 0.32;
-    try{
-      const layoutSnap = await getDoc(doc(db,'settings','visaLayout'));
-      if(layoutSnap.exists()){
-        const data = layoutSnap.data();
-        if(Array.isArray(data.elements)) elements = data.elements;
-        if(data.backgroundUrl) backgroundUrl = data.backgroundUrl;
-        if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(1.0, data.backgroundOpacity));
-      }
-    } catch(e){ /* use built-in defaults */ }
+          🖼️ Choose Image
+          <input type="file" accept="image }
     await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity);
   } catch(e){
     alert('Could not generate the document. Please try again.');
@@ -565,7 +296,7 @@ window.markAsPaid = async function(){
     if(idx>-1){ allApps[idx].feePaid = true; allApps[idx].paymentRef = 'manual-admin'; }
     msg.style.color='var(--green)'; msg.textContent='✅ Marked as paid.';
     renderStats(); renderTable();
-    setTimeout(()=>{ openModal(currentDetailRef); }, 700); // refresh modal to reflect new state
+    setTimeout(()=>{ openModal(currentDetailRef); }, 700); 
   } catch(e){
     msg.style.color='var(--red)'; msg.textContent='Failed to update. Please try again.';
   }
@@ -589,7 +320,7 @@ window.openPricingModal = async function(){
   try{
     const snap = await getDoc(doc(db,'settings','fees'));
     if(snap.exists()) fees = { ...DEFAULT_FEES, ...snap.data() };
-  } catch(e){ /* fall back to defaults if settings doc doesn't exist yet */ }
+  } catch(e){  }
   Object.entries(fees).forEach(([type, amount])=>{
     const el = document.getElementById('price-'+type);
     if(el) el.value = amount;
@@ -622,8 +353,8 @@ window.savePricing = async function(){
   }
 };
 
-// ===== LAYOUT EDITOR =====
-// PDF page is 612x792pt (Letter). Preview is scaled to 306x396px (scale 0.5).
+window.DEFAULT_BG_SOURCE = "bg-default.png";
+
 const PAGE_PT = { w: 612, h: 792 };
 const SCALE = 0.5;
 let currentElements = [];
@@ -631,43 +362,19 @@ let selectedElId = null;
 let elCounter = 0;
 let currentBackgroundUrl = null;
 let currentBackgroundOpacity = 0.32;
+let cropRect = { x:0, y:0, w:0, h:0 };
 
-// Shrinks the uploaded image, fades it, and bakes a diagonal repeating
-// "usa" pattern directly into the pixel data (not a separate layer
-// someone could delete later). This always runs — there's no toggle
-// to skip it — so no uploaded image can be used as a convincing
-// security background, no matter what the source photo is.
-function processBackgroundImage(file){
+function bakeBackgroundFromCanvas(source){
   return new Promise((resolve, reject)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      const maxW = 900;
-      const scale = Math.min(1, maxW/img.width);
-      const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      // Fade toward white so it reads as a faint illustrative underlay
-      ctx.fillStyle = 'rgba(255,255,255,0.45)';
-      ctx.fillRect(0,0,w,h);
-      // Bake repeating SAMPLE watermark into the pixels themselves
-      ctx.fillStyle = 'rgba(110,110,110,0.55)';
-      ctx.font = 'bold '+Math.round(w/16)+'px sans-serif';
-      ctx.textAlign = 'center';
-      for(let y=0; y<h+ (h/5); y+=h/5){
-        for(let x=0; x<w+(w/2); x+=w/2.2){
-          ctx.save();
-          ctx.translate(x,y);
-          ctx.rotate(-Math.PI/7);
-          ctx.fillText('SAMPLE', 0, 0);
-          ctx.restore();
-        }
-      }
-      canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error('canvas export failed')), 'image/jpeg', 0.85);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    const maxW = 900;
+    const sw = source.width, sh = source.height;
+    const scale = Math.min(1, maxW/sw);
+    const w = Math.round(sw*scale), h = Math.round(sh*scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0, w, h);
+    canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error('canvas export failed')), 'image/jpeg', 0.85);
   });
 }
 
@@ -689,13 +396,104 @@ window.onBackgroundOpacityInput = function(val){
   document.getElementById('bgOpacityValue').textContent = Math.round(currentBackgroundOpacity*100)+'%';
 };
 
-window.uploadLayoutBackground = async function(input){
+window.loadBackgroundSource = function(input){
   const file = input.files[0];
   if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=> openCropWithSource(reader.result);
+  reader.readAsDataURL(file);
+  input.value = '';
+};
+
+window.openCropWithSource = function(src){
+  if(!src) return;
+  const img = document.getElementById('cropSourceImg');
+  img.onload = initCropBox;
+  img.src = src; 
+  document.getElementById('cropSection').style.display = 'block';
+};
+
+function initCropBox(){
+  requestAnimationFrame(()=>{
+    const img = document.getElementById('cropSourceImg');
+    cropRect = { x:0, y:0, w:img.clientWidth, h:img.clientHeight };
+    updateCropBoxStyle();
+  });
+}
+
+function updateCropBoxStyle(){
+  const box = document.getElementById('cropBox');
+  box.style.left = cropRect.x+'px';
+  box.style.top = cropRect.y+'px';
+  box.style.width = cropRect.w+'px';
+  box.style.height = cropRect.h+'px';
+}
+
+function setupCropMove(){
+  const box = document.getElementById('cropBox');
+  let dragging=false, startX, startY, startRect;
+  box.addEventListener('pointerdown', e=>{
+    if(e.target.classList.contains('crop-handle')) return;
+    dragging = true;
+    box.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY; startRect = {...cropRect};
+  });
+  box.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const img = document.getElementById('cropSourceImg');
+    const maxW = img.clientWidth, maxH = img.clientHeight;
+    const dx = e.clientX-startX, dy = e.clientY-startY;
+    cropRect.x = Math.max(0, Math.min(maxW-cropRect.w, startRect.x+dx));
+    cropRect.y = Math.max(0, Math.min(maxH-cropRect.h, startRect.y+dy));
+    updateCropBoxStyle();
+  });
+  box.addEventListener('pointerup', ()=>{ dragging=false; });
+  box.addEventListener('pointercancel', ()=>{ dragging=false; });
+}
+
+function setupCropHandle(handle){
+  let dragging=false, startX, startY, startRect, mode;
+  const minSize = 24;
+  handle.addEventListener('pointerdown', e=>{
+    e.stopPropagation();
+    dragging = true; mode = handle.dataset.h;
+    handle.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY; startRect = {...cropRect};
+  });
+  handle.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const img = document.getElementById('cropSourceImg');
+    const maxW = img.clientWidth, maxH = img.clientHeight;
+    const dx = e.clientX-startX, dy = e.clientY-startY;
+    let {x,y,w,h} = startRect;
+    if(mode.includes('w')){ const nx = Math.max(0, Math.min(x+w-minSize, x+dx)); w = w+(x-nx); x = nx; }
+    if(mode.includes('e')){ w = Math.max(minSize, Math.min(maxW-x, w+dx)); }
+    if(mode.includes('n')){ const ny = Math.max(0, Math.min(y+h-minSize, y+dy)); h = h+(y-ny); y = ny; }
+    if(mode.includes('s')){ h = Math.max(minSize, Math.min(maxH-y, h+dy)); }
+    cropRect = {x,y,w,h};
+    updateCropBoxStyle();
+  });
+  handle.addEventListener('pointerup', ()=>{ dragging=false; });
+  handle.addEventListener('pointercancel', ()=>{ dragging=false; });
+}
+
+setupCropMove();
+document.querySelectorAll('.crop-handle').forEach(setupCropHandle);
+
+window.applyBackgroundCrop = async function(){
   const msg = document.getElementById('layoutMsg');
-  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Processing image (resizing + watermarking)...';
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Processing crop (resizing + watermarking)...';
   try{
-    const blob = await processBackgroundImage(file);
+    const img = document.getElementById('cropSourceImg');
+    const scaleX = img.naturalWidth / img.clientWidth;
+    const scaleY = img.naturalHeight / img.clientHeight;
+    const sx = Math.round(cropRect.x*scaleX), sy = Math.round(cropRect.y*scaleY);
+    const sw = Math.max(1, Math.round(cropRect.w*scaleX)), sh = Math.max(1, Math.round(cropRect.h*scaleY));
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = sw; cropCanvas.height = sh;
+    cropCanvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    const blob = await bakeBackgroundFromCanvas(cropCanvas);
     msg.textContent = 'Uploading...';
     const fd = new FormData();
     fd.append('file', blob);
@@ -708,9 +506,8 @@ window.uploadLayoutBackground = async function(input){
     applyBackgroundPreview(currentBackgroundUrl, currentBackgroundOpacity);
     msg.style.color='var(--green)'; msg.textContent='✅ Background set (auto-watermarked — not editable here, see layout hint above).';
   } catch(e){
-    msg.style.color='var(--red)'; msg.textContent='Background upload failed. Please try again.';
+    msg.style.color='var(--red)'; msg.textContent='Background processing failed. Please try again.';
   }
-  input.value = '';
 };
 
 window.removeLayoutBackground = function(){
@@ -731,30 +528,64 @@ function buildFieldPalette(){
 
 function renderLayoutPreview(){
   const preview = document.getElementById('layoutPreview');
-  // Remove previously rendered elements (keep the static guide divs)
   preview.querySelectorAll('.layout-el').forEach(el=>el.remove());
 
   currentElements.forEach(el=>{
     const div = document.createElement('div');
     div.dataset.id = el.id;
+    const isSelected = el.id === selectedElId;
+
     if(el.type === 'photo'){
-      div.className = 'layout-el photo-el' + (el.id===selectedElId ? ' selected' : '');
+      div.className = 'layout-el photo-el' + (isSelected ? ' selected' : '');
       div.style.width = ptToPx(el.w)+'px';
       div.style.height = ptToPx(el.h)+'px';
       div.textContent = 'PHOTO';
     } else {
-      div.className = 'layout-el' + (el.id===selectedElId ? ' selected' : '');
+      div.className = 'layout-el' + (isSelected ? ' selected' : '');
       const def = el.type==='field' ? window.VISA_FIELD_DEFS.find(f=>f.key===el.fieldKey) : null;
       div.textContent = el.type==='field' ? (def ? def.label : el.fieldKey) : (el.content || '(empty text)');
+      div.style.fontSize = ptToPx(el.fontSize || 10)+'px';
+      div.style.whiteSpace = 'nowrap';
     }
     div.style.left = ptToPx(el.x)+'px';
     div.style.top = ptToPx(el.y)+'px';
-    div.addEventListener('pointerdown', e=>{ selectElement(el.id); });
+
+    
+    div.addEventListener('pointerdown', e=>{
+      if(e.target.classList.contains('resize-handle')) return;
+      selectElement(el.id);
+    });
+
     makeDraggable(div, (left, top)=>{
       el.x = Math.round(pxToPt(left));
       el.y = Math.round(pxToPt(top));
     });
-    document.getElementById('layoutPreview').appendChild(div);
+
+    
+    if(isSelected){
+      const handle = document.createElement('div');
+      handle.className = 'resize-handle';
+      div.style.overflow = 'visible';
+      div.appendChild(handle);
+
+      if(el.type === 'photo'){
+        makeResizable(handle, div, (dw, dh)=>{
+          el.w = Math.max(20, Math.round(pxToPt(ptToPx(el.w) + dw)));
+          el.h = Math.max(20, Math.round(pxToPt(ptToPx(el.h) + dh)));
+          div.style.width = ptToPx(el.w)+'px';
+          div.style.height = ptToPx(el.h)+'px';
+        });
+      } else {
+        
+        makeResizable(handle, div, (dw, dh)=>{
+          const delta = (Math.abs(dw) > Math.abs(dh) ? dw : dh) * 0.07;
+          el.fontSize = Math.max(5, Math.min(40, (el.fontSize || 10) + delta));
+          div.style.fontSize = ptToPx(el.fontSize)+'px';
+        });
+      }
+    }
+
+    preview.appendChild(div);
   });
 
   const borderGuide = document.getElementById('pageBorderGuide');
@@ -773,6 +604,7 @@ function selectElement(id){
 function makeDraggable(el, onMove){
   let dragging = false, startX, startY, origLeft, origTop;
   el.addEventListener('pointerdown', e=>{
+    if(e.target.classList.contains('resize-handle')) return;
     dragging = true;
     el.setPointerCapture(e.pointerId);
     startX = e.clientX; startY = e.clientY;
@@ -795,6 +627,24 @@ function makeDraggable(el, onMove){
   el.addEventListener('pointercancel', ()=>{ dragging = false; });
 }
 
+function makeResizable(handle, el, onResize){
+  let dragging = false, startX, startY;
+  handle.addEventListener('pointerdown', e=>{
+    e.stopPropagation();
+    dragging = true;
+    handle.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY;
+  });
+  handle.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dw = e.clientX - startX, dh = e.clientY - startY;
+    startX = e.clientX; startY = e.clientY;
+    onResize(dw, dh);
+  });
+  handle.addEventListener('pointerup', ()=>{ dragging = false; });
+  handle.addEventListener('pointercancel', ()=>{ dragging = false; });
+}
+
 window.addFieldElement = function(fieldKey){
   elCounter++;
   const id = 'el_'+Date.now()+'_'+elCounter;
@@ -803,7 +653,7 @@ window.addFieldElement = function(fieldKey){
 };
 
 window.addPhotoElement = function(){
-  // Only one photo is meaningful, but we don't hard-block duplicates for consistency
+  
   elCounter++;
   const id = 'el_'+Date.now()+'_'+elCounter;
   currentElements.push({ id, type:'photo', x:60, y:130, w:110, h:130 });
@@ -843,7 +693,7 @@ window.openLayoutEditor = async function(){
       if(data.backgroundUrl) currentBackgroundUrl = data.backgroundUrl;
       if(typeof data.backgroundOpacity === 'number') currentBackgroundOpacity = Math.max(0.1, Math.min(0.7, data.backgroundOpacity));
     }
-  } catch(e){ /* use defaults */ }
+  } catch(e){  }
   document.getElementById('layoutOverlay').classList.add('open');
   applyBackgroundPreview(currentBackgroundUrl, currentBackgroundOpacity);
   renderLayoutPreview();
