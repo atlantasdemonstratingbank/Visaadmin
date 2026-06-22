@@ -300,6 +300,176 @@ onAuthStateChanged(auth, (user)=>{
   }
 });
 
+async function loadApplications(){
+  try{
+    const q = query(collection(db,'visa_applications'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q);
+    allApps = [];
+    snap.forEach(d=> allApps.push(d.data()));
+  } catch(e){
+    const snap = await getDocs(collection(db,'visa_applications'));
+    allApps = [];
+    snap.forEach(d=> allApps.push(d.data()));
+  }
+  renderStats();
+  renderTable();
+}
+
+function computeCombinedStatus(a){
+  const paid = !!a.feePaid;
+  const bio = !!a.biometricScheduled;
+  if(!paid && !bio) return 'pending_both';
+  if(paid && !bio) return 'paid_pending_bio';
+  if(!paid && bio) return 'bio_pending_paid';
+  const review = a.reviewStatus || 'pending';
+  if(review==='approved') return 'approved';
+  if(review==='denied') return 'denied';
+  return 'under_review';
+}
+
+const STATUS_BADGE_CLASS = {
+  pending_both:'status-pending_payment',
+  paid_pending_bio:'status-payment_received',
+  bio_pending_paid:'status-biometric_scheduled',
+  under_review:'status-under_review',
+  approved:'status-approved',
+  denied:'status-denied'
+};
+
+function renderStats(){
+  const counts = {pending_both:0,paid_pending_bio:0,bio_pending_paid:0,under_review:0,approved:0,denied:0};
+  allApps.forEach(a=>{ const c = computeCombinedStatus(a); if(counts[c]!==undefined) counts[c]++; });
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${allApps.length}</div><div class="stat-label">Total Applications</div></div>
+    <div class="stat-card pending"><div class="stat-num">${counts.pending_both}</div><div class="stat-label">Pending Payment & Biometric</div></div>
+    <div class="stat-card review"><div class="stat-num">${counts.paid_pending_bio+counts.bio_pending_paid+counts.under_review}</div><div class="stat-label">In Process</div></div>
+    <div class="stat-card approved"><div class="stat-num">${counts.approved}</div><div class="stat-label">Approved</div></div>
+    <div class="stat-card denied"><div class="stat-num">${counts.denied}</div><div class="stat-label">Denied</div></div>
+  `;
+}
+
+const STATUS_LABELS = {
+  pending_both:'Pending Payment & Biometric', paid_pending_bio:'Payment Received — Biometric Pending',
+  bio_pending_paid:'Biometric Done — Payment Pending', under_review:'Under Review',
+  approved:'Approved', denied:'Denied'
+};
+
+window.renderTable = function(){
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const filter = document.getElementById('statusFilter').value;
+  let rows = allApps.filter(a=>{
+    const matchesSearch = !search || (a.fullName||'').toLowerCase().includes(search) || (a.email||'').toLowerCase().includes(search) || (a.ref||'').toLowerCase().includes(search);
+    const matchesFilter = !filter || computeCombinedStatus(a) === filter;
+    return matchesSearch && matchesFilter;
+  });
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('emptyState').style.display = rows.length? 'none':'block';
+  tbody.innerHTML = rows.map(a=>{
+    const combined = computeCombinedStatus(a);
+    return `<tr onclick="openModal('${a.ref}')">
+      <td class="ref-cell">${a.ref}</td>
+      <td>${a.fullName||'—'}</td>
+      <td>${a.visaType||'—'}</td>
+      <td>${a.createdAt? new Date(a.createdAt.seconds*1000).toLocaleDateString() : '—'}</td>
+      <td><span class="status-pill ${STATUS_BADGE_CLASS[combined]}">${STATUS_LABELS[combined]}</span></td>
+    </tr>`;
+  }).join('');
+};
+
+window.openModal = function(ref){
+  const a = allApps.find(x=>x.ref===ref);
+  if(!a) return;
+  currentDetailRef = ref;
+  document.getElementById('modalName').textContent = a.fullName||'Applicant';
+  document.getElementById('modalRef').textContent = a.ref;
+  const docs = a.documents || {};
+  const docHtml = Object.keys(docs).length
+    ? `<div class="doc-grid">${Object.entries(docs).map(([k,v])=>`<a href="${v}" target="_blank" class="doc-link">📄 ${k.replace('_',' ')}</a>`).join('')}</div>`
+    : '<p style="font-size:13px;color:var(--muted)">No documents uploaded yet.</p>';
+  const bioPhotos = a.biometricPhotos || {};
+  const bioLabels = {front:'Front', right:'Turn Right', left:'Turn Left', blink:'Blink'};
+  const bioHtml = Object.keys(bioPhotos).length
+    ? `<div class="bio-photo-grid">${Object.entries(bioPhotos).map(([k,v])=>`<a href="${v}" target="_blank" class="bio-photo-card"><img src="${v}" loading="lazy"/><span>${bioLabels[k]||k}</span></a>`).join('')}</div>`
+    : '<p style="font-size:13px;color:var(--muted)">No biometric capture submitted yet.</p>';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-section"><h4>Applicant Information</h4><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Email</div><div class="dv">${a.email||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Date of Birth</div><div class="dv">${a.dob||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Citizenship</div><div class="dv">${a.citizenship||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Occupation</div><div class="dv">${a.occupation||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Passport No.</div><div class="dv">${a.passportNum||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Passport Expiry</div><div class="dv">${a.passportExpiry||'—'}</div></div>
+    </div></div>
+    <div class="detail-section"><h4>Travel Details</h4><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Visa Type</div><div class="dv">${a.visaType||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Purpose</div><div class="dv">${a.purpose||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Arrival</div><div class="dv">${a.arrivalDate||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Departure</div><div class="dv">${a.departureDate||'—'}</div></div>
+    </div></div>
+    <div class="detail-section"><h4>Payment & Biometric</h4><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Fee Paid</div><div class="dv">${a.feePaid?'✅ Yes':'❌ No'}</div></div>
+      <div class="detail-item"><div class="dl">Payment Ref</div><div class="dv">${a.paymentRef||'—'}</div></div>
+      <div class="detail-item"><div class="dl">Biometric Location</div><div class="dv">${a.biometricLocation||'Not scheduled'}</div></div>
+      <div class="detail-item"><div class="dl">Biometric Date</div><div class="dv">${a.biometricDate||'—'} ${a.biometricTime||''}</div></div>
+    </div>
+    ${!a.feePaid ? `<button class="action-btn approve" style="margin-top:14px" onclick="markAsPaid()">💲 Mark as Paid (Manual)</button>` : ''}
+    ${computeCombinedStatus(a)==='approved' ? `<button class="action-btn approve" style="margin-top:10px" id="adminDownloadVisaBtn" onclick="downloadVisaAdmin()">📄 Download Visa Document (PDF)</button>` : ''}
+    </div>
+    <div class="detail-section"><h4>Biometric Capture</h4>${bioHtml}</div>
+    <div class="detail-section"><h4>Visa Photo Override</h4>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Upload a photo here to override the biometric capture photo on the visa PDF.</p>
+      ${a.manualPhotoUrl ? `<img src="${a.manualPhotoUrl}" style="width:90px;height:106px;object-fit:cover;border-radius:6px;border:1px solid var(--border);margin-bottom:10px;display:block"/>` : ''}
+      <label style="background:var(--blue);color:#fff;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;display:inline-block">
+        ${a.manualPhotoUrl ? 'Replace Photo' : 'Upload Photo'} <input type="file" accept="image/*" style="display:none" onchange="uploadManualPhoto(this)"/>
+      </label>
+      ${a.manualPhotoUrl ? `<button class="action-btn" style="margin-left:8px" onclick="clearManualPhoto()">Remove Override</button>` : ''}
+      <p class="update-msg" id="manualPhotoMsg"></p>
+    </div>
+    <div class="detail-section"><h4>Uploaded Documents</h4>${docHtml}</div>
+    <div class="detail-section"><h4>Update Application Status</h4>
+      <div class="status-actions">
+        <button class="action-btn review" onclick="updateStatus('under_review')">Mark Under Review</button>
+        <button class="action-btn approve" onclick="showApproveForm()">Approve Visa</button>
+        <button class="action-btn deny" onclick="updateStatus('denied')">Deny Visa</button>
+      </div>
+      <div id="approveForm" style="display:none;margin-top:14px;padding:14px;background:var(--offwhite);border-radius:8px">
+        <label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Delivery Address</label>
+        <textarea id="deliveryAddressInput" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit" placeholder="Full delivery address">${a.deliveryAddress||''}</textarea>
+        <button class="action-btn approve" style="margin-top:10px" onclick="confirmApprove()">Confirm Approval</button>
+      </div>
+      <p class="update-msg" id="updateMsg"></p>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+};
+
+window.closeModal = function(){ document.getElementById('modalOverlay').classList.remove('open'); };
+
+window.downloadVisaAdmin = async function(){
+  const a = allApps.find(x=>x.ref===currentDetailRef);
+  if(!a) return;
+  const btn = document.getElementById('adminDownloadVisaBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
+  try{
+    let elements = null;
+    let backgroundUrl = null;
+    let backgroundOpacity = 0.32;
+    try{
+      const layoutSnap = await getDoc(doc(db,'settings','visaLayout'));
+      if(layoutSnap.exists()){
+        const data = layoutSnap.data();
+        if(Array.isArray(data.elements)) elements = data.elements;
+        if(data.backgroundUrl) backgroundUrl = data.backgroundUrl;
+        if(typeof data.backgroundOpacity === 'number') backgroundOpacity = Math.max(0.1, Math.min(0.7, data.backgroundOpacity));
+      }
+    } catch(e){}
+    await generateVisaPDF(a, elements, backgroundUrl, backgroundOpacity);
+  } catch(e){
+    alert('Could not generate the document. Please try again.');
+  }
+  if(btn){ btn.disabled = false; btn.textContent = '📄 Download Visa Document (PDF)'; }
+};
+
 window.uploadManualPhoto = async function(input){
   const file = input.files[0];
   if(!file) return;
