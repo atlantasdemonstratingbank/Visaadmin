@@ -984,36 +984,44 @@ function edMsg(txt, color='#4ade80'){
 
 // Open editor — load saved layout from Firestore
 window.openDocEditor = async function(){
-  edElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS || []));
-  edSelected = null; edZoom = 1;
-  edDocW = 540; edDocH = 520;
-  edBgUrl = null; edBgOpacity = 1; edBgRawSrc = null;
-  document.getElementById('docSizeSelect').value = '540,520';
-
-  // Open immediately — never block on Firestore
+  // Show immediately — before anything else — so the button always responds visually
   document.getElementById('docEditor').style.display = 'flex';
-  edBuildFieldPalette();
-  edApplyBg();
-  edRender();
-  edUpdateZoom();
 
-  // Load saved layout in background and refresh if found
   try{
-    const snap = await getDoc(doc(db,'settings','visaLayout'));
-    if(snap.exists()){
-      const data = snap.data();
-      if(Array.isArray(data.elements)&&data.elements.length) edElements = data.elements;
-      if(data.backgroundUrl){ edBgUrl = data.backgroundUrl; edBgRawSrc = data.backgroundUrl; }
-      if(typeof data.backgroundOpacity==='number') edBgOpacity = data.backgroundOpacity;
-      if(typeof data.visaBoxW==='number') edDocW = data.visaBoxW;
-      if(typeof data.visaBoxH==='number') edDocH = data.visaBoxH;
-      const key = `${edDocW},${edDocH}`;
-      const sel = document.getElementById('docSizeSelect');
-      if([...sel.options].some(o=>o.value===key)) sel.value = key;
-      edApplyBg();
-      edRender();
-    }
-  } catch(e){ /* use defaults if Firestore fails */ }
+    edElements = JSON.parse(JSON.stringify(window.DEFAULT_VISA_ELEMENTS || []));
+    edSelected = null; edZoom = 1;
+    edDocW = 540; edDocH = 520;
+    edBgUrl = null; edBgOpacity = 1; edBgRawSrc = null;
+    document.getElementById('docSizeSelect').value = '540,520';
+
+    edBuildFieldPalette();
+    edApplyBg();
+    edRender();
+    edUpdateZoom();
+
+    // Load saved layout in background
+    try{
+      const snap = await getDoc(doc(db,'settings','visaLayout'));
+      if(snap.exists()){
+        const data = snap.data();
+        if(Array.isArray(data.elements)&&data.elements.length) edElements = data.elements;
+        if(data.backgroundUrl){ edBgUrl = data.backgroundUrl; edBgRawSrc = data.backgroundUrl; }
+        if(typeof data.backgroundOpacity==='number') edBgOpacity = data.backgroundOpacity;
+        if(typeof data.visaBoxW==='number') edDocW = data.visaBoxW;
+        if(typeof data.visaBoxH==='number') edDocH = data.visaBoxH;
+        const key = `${edDocW},${edDocH}`;
+        const sel = document.getElementById('docSizeSelect');
+        if([...sel.options].some(o=>o.value===key)) sel.value = key;
+        edApplyBg();
+        edRender();
+      }
+    } catch(e){ /* firestore failed, use defaults */ }
+  } catch(err){
+    // If anything crashes, at least show an error in the editor instead of blank screen
+    document.getElementById('editorMsg').textContent = 'Editor error: '+err.message;
+    document.getElementById('editorMsg').style.display = 'block';
+    document.getElementById('editorMsg').style.color = '#f87171';
+  }
 };
 
 window.closeDocEditor = function(){
@@ -1112,8 +1120,15 @@ window.editorRemoveBg = function(){ edBgUrl=null; edBgRawSrc=null; edApplyBg(); 
 // ── Field palette ──
 function edBuildFieldPalette(){
   const pal = document.getElementById('edFieldPalette');
+  if(!pal) return;
   pal.innerHTML = '';
-  (window.VISA_FIELD_DEFS||[]).forEach(f=>{
+  const fields = window.VISA_FIELD_DEFS || [];
+  if(!fields.length){
+    pal.innerHTML = '<p style="color:#555;font-size:11px;padding:6px">Loading fields...</p>';
+    setTimeout(edBuildFieldPalette, 400);
+    return;
+  }
+  fields.forEach(f=>{
     const btn = document.createElement('button');
     btn.textContent = f.label;
     btn.style.cssText = 'width:100%;background:#0f3460;color:#ccc;border:1px solid #333;border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;text-align:left';
