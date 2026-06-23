@@ -989,6 +989,15 @@ window.openDocEditor = async function(){
   edDocW = 540; edDocH = 520;
   edBgUrl = null; edBgOpacity = 1; edBgRawSrc = null;
   document.getElementById('docSizeSelect').value = '540,520';
+
+  // Open immediately — never block on Firestore
+  document.getElementById('docEditor').style.display = 'flex';
+  edBuildFieldPalette();
+  edApplyBg();
+  edRender();
+  edUpdateZoom();
+
+  // Load saved layout in background and refresh if found
   try{
     const snap = await getDoc(doc(db,'settings','visaLayout'));
     if(snap.exists()){
@@ -1001,13 +1010,10 @@ window.openDocEditor = async function(){
       const key = `${edDocW},${edDocH}`;
       const sel = document.getElementById('docSizeSelect');
       if([...sel.options].some(o=>o.value===key)) sel.value = key;
+      edApplyBg();
+      edRender();
     }
-  } catch(e){}
-  document.getElementById('docEditor').style.display = 'flex';
-  edBuildFieldPalette();
-  edApplyBg();
-  edRender();
-  edUpdateZoom();
+  } catch(e){ /* use defaults if Firestore fails */ }
 };
 
 window.closeDocEditor = function(){
@@ -1210,7 +1216,7 @@ function edMakeElDiv(el){
     const rh = document.createElement('div');
     rh.className = 'ed-handle';
     rh.style.cssText = 'position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;background:#e94560;border:2px solid #fff;border-radius:50%;cursor:nwse-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.4)';
-    rh.addEventListener('pointerdown', e=>{ e.stopPropagation(); edMakeResizable(rh, el); });
+    rh.addEventListener('pointerdown', e=>{ e.stopPropagation(); edMakeResizable(rh, el, e); });
     div.appendChild(rh);
 
     // Delete handle (top-right)
@@ -1244,10 +1250,10 @@ function edMakeDraggable(div, el){
   div.addEventListener('pointercancel', ()=>{ drag=false; });
 }
 
-function edMakeResizable(handle, el){
+function edMakeResizable(handle, el, startEvent){
   let drag=false, sx, sy, ow, oh;
-  drag=true; handle.setPointerCapture(event.pointerId);
-  sx=event.clientX; sy=event.clientY; ow=el.w; oh=el.h;
+  drag=true; handle.setPointerCapture(startEvent.pointerId);
+  sx=startEvent.clientX; sy=startEvent.clientY; ow=el.w; oh=el.h;
   function onMove(e){
     el.w = edSnap(Math.max(30, ow+(e.clientX-sx)/edZoom));
     el.h = edSnap(Math.max(16, oh+(e.clientY-sy)/edZoom));
